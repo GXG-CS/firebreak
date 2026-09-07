@@ -8,6 +8,7 @@ build/
 .pytest_cache/
 .ruff_cache/
 traces/
+!docs/traces/
 eval/results/
 slurm/logs/
 .env
