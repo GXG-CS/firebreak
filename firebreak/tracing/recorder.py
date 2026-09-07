@@ -1,4 +1,9 @@
-"""Record one LangGraph run into an ordered, serialisable Trace."""
+"""Record LangGraph runs into an ordered, serialisable Trace.
+
+A Trace can hold one ``graph.invoke`` (the research_team example) or a whole episode of
+invocations on one thread (one per user turn, the tau2 integration).  Every event is
+stamped with ``episode_id`` / ``turn`` / ``invoke_id``; ``seq`` keeps increasing.
+"""
 
 from __future__ import annotations
 
@@ -10,6 +15,8 @@ from typing import Any, Iterable, Optional
 from firebreak.tracing.callbacks import FirebreakTracer
 from firebreak.tracing.events import Event, safe
 
+CONTEXT_KEYS = ("episode_id", "turn", "invoke_id")
+
 
 class Trace:
     """Ordered list of Events plus run metadata (static graph, final state, timing)."""
@@ -18,22 +25,38 @@ class Trace:
         self.events: list[Event] = []
         self.meta: dict[str, Any] = {}
         self.final_state: Any = None
+        self.context: dict[str, Any] = {}
         self._seq = 0
 
     def add(self, event: Event) -> Event:
         self._seq += 1
         event.seq = self._seq
+        for key in CONTEXT_KEYS:
+            if getattr(event, key) is None and self.context.get(key) is not None:
+                setattr(event, key, self.context[key])
         self.events.append(event)
         return event
 
     def of_kind(self, *kinds: str) -> list[Event]:
         return [e for e in self.events if e.kind in kinds]
 
+    @property
+    def turns(self) -> list[int]:
+        return sorted({e.turn for e in self.events if e.turn is not None})
+
+    @property
+    def invoke_ids(self) -> list[str]:
+        seen: list[str] = []
+        for e in self.events:
+            if e.invoke_id is not None and e.invoke_id not in seen:
+                seen.append(e.invoke_id)
+        return seen
+
     def to_jsonl(self, path: str) -> None:
         with open(path, "w", encoding="utf-8") as handle:
-            handle.write(json.dumps({"__meta__": self.meta}) + "\n")
+            handle.write(json.dumps({"__meta__": self.meta}, default=str) + "\n")
             for event in self.events:
-                handle.write(json.dumps(event.to_dict()) + "\n")
+                handle.write(json.dumps(event.to_dict(), default=str) + "\n")
 
     @classmethod
     def from_jsonl(cls, path: str) -> "Trace":
@@ -155,6 +178,23 @@ def _ingest_task(trace: Trace, chunk: Any) -> None:
         )
 
 
+def _iter_stream(stream: Iterable[Any]):
+    """Normalise multi-mode stream items to ``(mode, data)``.
+
+    LangGraph's default (v1) multi-mode streaming yields ``(mode, data)`` tuples; the v2
+    protocol yields ``StreamPart`` dicts with a ``type`` key.  Both are accepted here.
+    """
+    for item in stream:
+        if isinstance(item, tuple) and len(item) == 2:
+            yield item[0], item[1]
+        elif isinstance(item, dict) and "type" in item:
+            mode = item["type"]
+            data = item.get("data", item.get("chunk", item))
+            yield mode, data
+        else:
+            yield "unknown", item
+
+
 def _static_graph(graph: Any) -> dict[str, Any]:
     """Snapshot the compiled graph's static structure (node names, edges)."""
     try:
@@ -174,23 +214,6 @@ def _static_graph(graph: Any) -> dict[str, Any]:
     return {"nodes": nodes, "edges": edges}
 
 
-def _iter_stream(stream: Iterable[Any]):
-    """Normalise multi-mode stream items to ``(mode, data)``.
-
-    LangGraph's default (v1) multi-mode streaming yields ``(mode, data)`` tuples; the v2
-    protocol yields ``StreamPart`` dicts with a ``type`` key.  Both are accepted here.
-    """
-    for item in stream:
-        if isinstance(item, tuple) and len(item) == 2:
-            yield item[0], item[1]
-        elif isinstance(item, dict) and "type" in item:
-            mode = item["type"]
-            data = item.get("data", item.get("chunk", item))
-            yield mode, data
-        else:
-            yield "unknown", item
-
-
 def record(
     graph: Any,
     input: Any,
@@ -199,24 +222,34 @@ def record(
     trace: Optional[Trace] = None,
     thread_id: Optional[str] = None,
     extra_callbacks: Optional[Iterable[Any]] = None,
+    episode_id: Optional[str] = None,
+    turn: Optional[int] = None,
+    invoke_id: Optional[str] = None,
 ) -> Trace:
-    """Run ``graph`` on ``input`` and capture everything into a Trace.
+    """Run ``graph`` on ``input`` once and append everything to a Trace.
 
-    The trace merges LangGraph's debug stream (node starts, writes, triggers, checkpoints)
-    with callback events (tool / model calls attributed to nodes).
+    Call repeatedly with the same ``trace`` (and thread id) to record a multi-turn episode;
+    pass ``turn`` so events can be grouped per user turn.
     """
     trace = trace or Trace()
     tracer = FirebreakTracer(trace)
     cfg = dict(config or {})
     cfg["callbacks"] = list(cfg.get("callbacks") or []) + list(extra_callbacks or []) + [tracer]
     configurable = dict(cfg.get("configurable") or {})
-    configurable.setdefault("thread_id", thread_id or str(uuid.uuid4()))
+    configurable.setdefault("thread_id", thread_id or trace.meta.get("thread_id") or str(uuid.uuid4()))
     cfg["configurable"] = configurable
 
+    invoke_id = invoke_id or (f"t{turn}" if turn is not None else f"i{len(trace.meta.get('invokes') or []) + 1}")
+    episode_id = episode_id or trace.meta.get("episode_id") or str(uuid.uuid4())[:8]
+    trace.meta["episode_id"] = episode_id
     trace.meta["thread_id"] = configurable["thread_id"]
-    trace.meta["static_graph"] = _static_graph(graph)
-    trace.meta["started"] = time.time()
+    trace.meta.setdefault("static_graph", _static_graph(graph))
+    trace.context = {"episode_id": episode_id, "turn": turn, "invoke_id": invoke_id}
+
+    started = time.time()
+    trace.meta.setdefault("started", started)
     last_values: Any = None
+    error: Optional[str] = None
     try:
         try:
             for mode, chunk in _iter_stream(graph.stream(input, cfg, stream_mode=["debug", "values"])):
@@ -234,10 +267,16 @@ def record(
                 elif mode == "tasks":
                     _ingest_task(trace, chunk)
     except Exception as exc:
+        error = repr(exc)
         trace.add(Event("run_error", payload={"error": safe(exc)}))
-        trace.meta["run_error"] = repr(exc)
-    trace.meta["finished"] = time.time()
-    trace.meta["wall_time"] = trace.meta["finished"] - trace.meta["started"]
+        trace.meta["run_error"] = error
+    finished = time.time()
+    trace.meta["finished"] = finished
+    trace.meta.setdefault("invokes", []).append(
+        {"invoke_id": invoke_id, "turn": turn, "started": started, "finished": finished, "wall_time": finished - started, "error": error}
+    )
+    trace.meta["wall_time"] = sum(i["wall_time"] for i in trace.meta["invokes"])
     trace.final_state = last_values
     trace.meta["final_state"] = safe(last_values)
+    trace.context = {}
     return trace

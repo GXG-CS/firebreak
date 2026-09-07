@@ -38,12 +38,16 @@ def safe(value: Any, depth: int = 0) -> Any:
             "type": getattr(value, "type", None),
             "content": safe(getattr(value, "content"), depth + 1),
         }
-        name = getattr(value, "name", None)
-        if name:
-            out["name"] = name
+        for attr in ("name", "tool_call_id", "id"):
+            val = getattr(value, attr, None)
+            if val:
+                out[attr] = val
         tool_calls = getattr(value, "tool_calls", None)
         if tool_calls:
             out["tool_calls"] = safe(tool_calls, depth + 1)
+        provenance = (getattr(value, "response_metadata", None) or {}).get("firebreak")
+        if provenance:
+            out["firebreak"] = safe(provenance, depth + 1)
         return out
     if hasattr(value, "model_dump"):
         try:
@@ -60,6 +64,9 @@ class Event:
     kind: node_start | node_end | node_error | tool_start | tool_end | tool_error |
           llm_start | llm_end | llm_error | chain_start | chain_end | chain_error |
           checkpoint | injection | run_error
+
+    ``episode_id`` / ``turn`` / ``invoke_id`` place the event inside a multi-invocation
+    episode (one ``graph.invoke`` per user turn). ``seq`` is global across the episode.
     """
 
     kind: str
@@ -73,6 +80,9 @@ class Event:
     payload: dict = field(default_factory=dict)
     ts: float = field(default_factory=time.time)
     seq: int = 0
+    episode_id: Optional[str] = None
+    turn: Optional[int] = None
+    invoke_id: Optional[str] = None
 
     def to_dict(self) -> dict:
         return asdict(self)

@@ -21,6 +21,8 @@ import os
 import re
 from typing import Any, Optional, TypedDict
 
+from langchain_core.runnables import RunnableConfig
+
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
@@ -122,11 +124,11 @@ def build(model: str = "fake", plan: Optional[FaultPlan] = None) -> App:
             return "OK: announcement published."
         return "ERROR: announcement rejected by compliance check (year mismatch)."
 
-    def ask(role: str, content: str, config: Any) -> str:
+    def ask(role: str, content: str, config: RunnableConfig) -> str:
         reply = llm.invoke([SystemMessage(content=role), HumanMessage(content=content)], config=config)
         return str(reply.content)
 
-    def researcher(state: TeamState, config: Any) -> dict:
+    def researcher(state: TeamState, config: RunnableConfig) -> dict:
         try:
             result = search_web.invoke({"query": state["task"]}, config=config)
         except Exception as exc:  # a realistic worker swallows the error and carries on
@@ -134,19 +136,19 @@ def build(model: str = "fake", plan: Optional[FaultPlan] = None) -> App:
         findings = ask(ROLE_RESEARCHER, f"Task: {state['task']}\nSearch result: {result}\nWrite the findings.", config)
         return {"findings": findings}
 
-    def reviewer(state: TeamState, config: Any) -> dict:
+    def reviewer(state: TeamState, config: RunnableConfig) -> dict:
         review = ask(ROLE_REVIEWER, f"Findings: {state.get('findings', '')}\nReview them.", config)
         return {"review": review}
 
-    def planner(state: TeamState, config: Any) -> dict:
+    def planner(state: TeamState, config: RunnableConfig) -> dict:
         plan_text = ask(ROLE_PLANNER, f"Findings: {state.get('findings', '')}\nReview: {state.get('review', '')}\nWrite the announcement.", config)
         return {"plan": plan_text}
 
-    def archivist(state: TeamState, config: Any) -> dict:
+    def archivist(state: TeamState, config: RunnableConfig) -> dict:
         note = ask(ROLE_ARCHIVIST, f"Task: {state['task']}", config)
         return {"archive_note": note}
 
-    def executor(state: TeamState, config: Any) -> dict:
+    def executor(state: TeamState, config: RunnableConfig) -> dict:
         try:
             result = run_task.invoke({"announcement": state.get("plan", "")}, config=config)
         except Exception as exc:

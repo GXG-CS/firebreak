@@ -1,11 +1,11 @@
-"""Rebuild the execution / dependency graph of one run from its Trace."""
+"""Rebuild the execution / dependency graph of one run (or one episode) from its Trace."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
-from firebreak.tracing.events import Event, is_routing_channel
+from firebreak.tracing.events import is_routing_channel
 
 START_NAME = "__start__"
 END_NAME = "__end__"
@@ -22,6 +22,7 @@ class ToolCall:
     error: Any = None
     seq_start: int = 0
     seq_end: Optional[int] = None
+    turn: Optional[int] = None
 
     @property
     def failed(self) -> bool:
@@ -53,6 +54,8 @@ class NodeRun:
     error: Any = None
     tools: list = field(default_factory=list)
     models: list = field(default_factory=list)
+    invoke_id: Optional[str] = None
+    turn: Optional[int] = None
 
     @property
     def data_writes(self) -> dict:
@@ -69,23 +72,26 @@ class NodeRun:
 
     @property
     def label(self) -> str:
-        return self.name if self.step is None else f"{self.name}@{self.step}"
+        base = self.name if self.step is None else f"{self.name}@{self.step}"
+        return base if self.turn is None else f"{base} (turn {self.turn})"
 
 
 @dataclass
 class Edge:
     src: str
     dst: str
-    via: list = field(default_factory=list)  # routing channels / static-edge labels
+    via: list = field(default_factory=list)  # static-edge labels
     data_keys: list = field(default_factory=list)  # state keys the source wrote
+    cross_turn: bool = False
 
 
 class ExecutionGraph:
     """Node runs plus data-flow edges between them.
 
     An edge ``A -> B`` is added when the compiled graph has a static edge ``A.name -> B.name``
-    and ``A`` is the latest run of that node that finished before ``B`` started.  Edges carry
-    the non-routing state keys ``A`` wrote, i.e. the data ``B`` could read from ``A``.
+    and ``A`` is the latest run of that node that finished before ``B`` started, in this or an
+    earlier invocation of the same thread (state persists across turns through the
+    checkpointer, so a later turn really does read what an earlier turn wrote).
     """
 
     def __init__(self) -> None:
@@ -107,21 +113,24 @@ class ExecutionGraph:
 
         for event in trace.events:
             if event.kind == "node_start":
-                run_id = event.task_id or f"{event.node}#{event.step}#{event.seq}"
+                task_key = f"{event.invoke_id or 'i'}:{event.task_id or f'{event.node}#{event.step}#{event.seq}'}"
                 run = NodeRun(
-                    id=run_id,
+                    id=task_key,
                     name=str(event.node),
                     step=event.step,
                     triggers=list(event.triggers),
                     start_seq=event.seq,
+                    invoke_id=event.invoke_id,
+                    turn=event.turn,
                 )
                 graph.runs.append(run)
-                graph._by_id[run_id] = run
-                open_by_task[run_id] = run
+                graph._by_id[run.id] = run
+                open_by_task[task_key] = run
             elif event.kind in ("node_end", "node_error"):
-                run = open_by_task.pop(event.task_id, None) if event.task_id else None
+                task_key = f"{event.invoke_id or 'i'}:{event.task_id}" if event.task_id else None
+                run = open_by_task.pop(task_key, None) if task_key else None
                 if run is None:
-                    run = graph._latest_open(event.node)
+                    run = graph._latest_open(event.node, event.invoke_id)
                     if run is not None:
                         open_by_task.pop(run.id, None)
                 if run is None:
@@ -137,17 +146,18 @@ class ExecutionGraph:
                     run_id=event.run_id,
                     input=event.payload.get("input"),
                     seq_start=event.seq,
+                    turn=event.turn,
                 )
                 if event.run_id:
                     tool_by_run[event.run_id] = call
-                owner = graph.locate(event.node, event.step, event.seq)
+                owner = graph.locate(event.node, event.step, event.seq, event.invoke_id)
                 if owner is not None:
                     owner.tools.append(call)
             elif event.kind in ("tool_end", "tool_error"):
                 call = tool_by_run.get(event.run_id or "")
                 if call is None:
-                    call = ToolCall(name=event.name, node=event.node, step=event.step, run_id=event.run_id, seq_start=event.seq)
-                    owner = graph.locate(event.node, event.step, event.seq)
+                    call = ToolCall(name=event.name, node=event.node, step=event.step, run_id=event.run_id, seq_start=event.seq, turn=event.turn)
+                    owner = graph.locate(event.node, event.step, event.seq, event.invoke_id)
                     if owner is not None:
                         owner.tools.append(call)
                 call.seq_end = event.seq
@@ -159,7 +169,7 @@ class ExecutionGraph:
                 call_m = ModelCall(name=event.name, node=event.node, step=event.step, run_id=event.run_id, seq_start=event.seq)
                 if event.run_id:
                     model_by_run[event.run_id] = call_m
-                owner = graph.locate(event.node, event.step, event.seq)
+                owner = graph.locate(event.node, event.step, event.seq, event.invoke_id)
                 if owner is not None:
                     owner.models.append(call_m)
             elif event.kind in ("llm_end", "llm_error"):
@@ -172,15 +182,19 @@ class ExecutionGraph:
         graph._build_edges()
         return graph
 
-    def _latest_open(self, name: Optional[str]) -> Optional[NodeRun]:
-        candidates = [r for r in self.runs if r.name == name and r.end_seq is None]
+    def _latest_open(self, name: Optional[str], invoke_id: Optional[str]) -> Optional[NodeRun]:
+        candidates = [r for r in self.runs if r.name == name and r.end_seq is None and (invoke_id is None or r.invoke_id == invoke_id)]
         return candidates[-1] if candidates else None
 
-    def locate(self, node: Optional[str], step: Optional[int], seq: int) -> Optional[NodeRun]:
+    def locate(self, node: Optional[str], step: Optional[int], seq: int, invoke_id: Optional[str] = None) -> Optional[NodeRun]:
         """Find the node run that was executing when event ``seq`` happened."""
         if node is None:
-            return None
+            return self.run_at(seq, invoke_id)
         candidates = [r for r in self.runs if r.name == node]
+        if invoke_id is not None:
+            same_invoke = [r for r in candidates if r.invoke_id == invoke_id]
+            if same_invoke:
+                candidates = same_invoke
         if step is not None:
             same_step = [r for r in candidates if r.step == step]
             if same_step:
@@ -189,6 +203,11 @@ class ExecutionGraph:
         if active:
             return active[-1]
         return candidates[-1] if candidates else None
+
+    def run_at(self, seq: int, invoke_id: Optional[str] = None) -> Optional[NodeRun]:
+        """The node run whose execution window contains ``seq`` (used for injection events)."""
+        active = [r for r in self.runs if r.contains(seq) and (invoke_id is None or r.invoke_id == invoke_id)]
+        return active[-1] if active else None
 
     def _static_predecessors(self, name: str) -> list[str]:
         preds = []
@@ -218,7 +237,13 @@ class ExecutionGraph:
                 if via not in edge.via:
                     edge.via.append(via)
                 return
-        edge = Edge(src=src.id, dst=dst.id, via=[via], data_keys=sorted(src.data_writes.keys()))
+        edge = Edge(
+            src=src.id,
+            dst=dst.id,
+            via=[via],
+            data_keys=sorted(src.data_writes.keys()),
+            cross_turn=(src.invoke_id != dst.invoke_id),
+        )
         self.edges.append(edge)
         self._out.setdefault(src.id, []).append(edge)
         self._in.setdefault(dst.id, []).append(edge)
@@ -254,6 +279,8 @@ class ExecutionGraph:
                     "id": r.id,
                     "name": r.name,
                     "step": r.step,
+                    "turn": r.turn,
+                    "invoke_id": r.invoke_id,
                     "triggers": r.triggers,
                     "writes": sorted(r.data_writes.keys()),
                     "error": r.error,
@@ -262,5 +289,8 @@ class ExecutionGraph:
                 }
                 for r in self.runs
             ],
-            "edges": [{"src": e.src, "dst": e.dst, "via": e.via, "data_keys": e.data_keys} for e in self.edges],
+            "edges": [
+                {"src": e.src, "dst": e.dst, "via": e.via, "data_keys": e.data_keys, "cross_turn": e.cross_turn}
+                for e in self.edges
+            ],
         }

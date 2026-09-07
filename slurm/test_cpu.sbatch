@@ -9,7 +9,7 @@
 # with the fake model.  No GPU, no API key.
 set -euo pipefail
 REPO=/gpfs/scratchfs1/jhf24001/mca25001/mas_safety/firebreak
-VENV="${FIREBREAK_VENV:-$REPO/.venv}"
+VENV="${FIREBREAK_VENV:-/gpfs/scratchfs1/jhf24001/mca25001/env/firebreak}"
 source "$VENV/bin/activate"
 cd "$REPO"
 python -c "import langgraph, langchain_core; print('langgraph', langgraph.__version__ if hasattr(langgraph,'__version__') else '?', 'langchain-core', langchain_core.__version__)"
@@ -20,3 +20,6 @@ echo "=== CLI demo: tool_error:search_web ==="
 firebreak run examples/multi_agent/research_team.py --inject tool_error:search_web --out slurm/logs/cascade_$SLURM_JOB_ID.jsonl --graph
 echo "=== benchmarks ==="
 python -m eval.run
+echo "=== tau2 airline task 39: clean and lookup-corruption (fake model) ==="
+python -m firebreak.integrations.tau2_airline.runner --task 39 --model fake
+python -m firebreak.integrations.tau2_airline.runner --task 39 --model fake --inject message_corruption:lookup:1:swap_first_eligible_reservation --out slurm/logs/tau2_cascade_.jsonl

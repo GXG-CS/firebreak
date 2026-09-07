@@ -6,7 +6,7 @@ import importlib.util
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Iterable, Optional
 
 from firebreak.detection.signals import detect
 from firebreak.graph.execution import ExecutionGraph
@@ -58,18 +58,20 @@ def analyze(
     outcome: str,
     validators: Optional[dict] = None,
     injected: Optional[list] = None,
-    marker: str = DEFAULT_MARKER,
+    marker: Optional[str] = DEFAULT_MARKER,
+    oracle: bool = False,
+    sensitive_tools: Optional[Iterable[str]] = None,
 ) -> Analysis:
     graph = ExecutionGraph.from_trace(trace)
-    signals = detect(trace, graph, validators=validators, marker=marker)
+    signals = detect(trace, graph, validators=validators, marker=marker, oracle=oracle)
     propagation = None
     tainted = None
     if signals and signals[0].run_id:
         propagation = propagate(graph, signals[0].run_id)
-        tainted = content_taint(graph, marker)
+        tainted = content_taint(graph, marker) if marker else None
     if injected is None:
         injected = [e.payload for e in trace.of_kind("injection")]
-    report = build_report(trace, graph, signals, propagation, outcome, injected=injected, content_tainted=tainted)
+    report = build_report(trace, graph, signals, propagation, outcome, injected=injected, content_tainted=tainted, sensitive_tools=sensitive_tools)
     return Analysis(trace=trace, graph=graph, signals=signals, propagation=propagation, report=report)
 
 
@@ -89,4 +91,5 @@ def run_app(app: App, plan: Optional[FaultPlan] = None, *, save: Optional[str] =
         trace.meta["faults"] = [f.spec for f in plan.faults]
     if save:
         trace.to_jsonl(save)
-    return analyze(trace, outcome, validators=app.validators, injected=list(plan.log) if plan else [])
+    marker = plan.marker if plan is not None else DEFAULT_MARKER
+    return analyze(trace, outcome, validators=app.validators, injected=list(plan.log) if plan else [], marker=marker)
