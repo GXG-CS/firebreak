@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 from firebreak.tracing.events import is_routing_channel
 
@@ -14,15 +14,15 @@ END_NAME = "__end__"
 @dataclass
 class ToolCall:
     name: str
-    node: Optional[str]
-    step: Optional[int]
-    run_id: Optional[str]
+    node: str | None
+    step: int | None
+    run_id: str | None
     input: Any = None
     output: Any = None
     error: Any = None
     seq_start: int = 0
-    seq_end: Optional[int] = None
-    turn: Optional[int] = None
+    seq_end: int | None = None
+    turn: int | None = None
 
     @property
     def failed(self) -> bool:
@@ -32,11 +32,11 @@ class ToolCall:
 @dataclass
 class ModelCall:
     name: str
-    node: Optional[str]
-    step: Optional[int]
-    run_id: Optional[str]
+    node: str | None
+    step: int | None
+    run_id: str | None
     seq_start: int = 0
-    seq_end: Optional[int] = None
+    seq_end: int | None = None
     error: Any = None
 
 
@@ -46,16 +46,16 @@ class NodeRun:
 
     id: str
     name: str
-    step: Optional[int]
+    step: int | None
     triggers: list = field(default_factory=list)
     start_seq: int = 0
-    end_seq: Optional[int] = None
+    end_seq: int | None = None
     writes: dict = field(default_factory=dict)
     error: Any = None
     tools: list = field(default_factory=list)
     models: list = field(default_factory=list)
-    invoke_id: Optional[str] = None
-    turn: Optional[int] = None
+    invoke_id: str | None = None
+    turn: int | None = None
 
     @property
     def data_writes(self) -> dict:
@@ -104,7 +104,7 @@ class ExecutionGraph:
 
     # ---- construction ------------------------------------------------------------------------
     @classmethod
-    def from_trace(cls, trace) -> "ExecutionGraph":
+    def from_trace(cls, trace) -> ExecutionGraph:
         graph = cls()
         graph.static_edges = list((trace.meta.get("static_graph") or {}).get("edges") or [])
         open_by_task: dict[str, NodeRun] = {}
@@ -182,11 +182,11 @@ class ExecutionGraph:
         graph._build_edges()
         return graph
 
-    def _latest_open(self, name: Optional[str], invoke_id: Optional[str]) -> Optional[NodeRun]:
+    def _latest_open(self, name: str | None, invoke_id: str | None) -> NodeRun | None:
         candidates = [r for r in self.runs if r.name == name and r.end_seq is None and (invoke_id is None or r.invoke_id == invoke_id)]
         return candidates[-1] if candidates else None
 
-    def locate(self, node: Optional[str], step: Optional[int], seq: int, invoke_id: Optional[str] = None) -> Optional[NodeRun]:
+    def locate(self, node: str | None, step: int | None, seq: int, invoke_id: str | None = None) -> NodeRun | None:
         """Find the node run that was executing when event ``seq`` happened."""
         if node is None:
             return self.run_at(seq, invoke_id)
@@ -204,7 +204,7 @@ class ExecutionGraph:
             return active[-1]
         return candidates[-1] if candidates else None
 
-    def run_at(self, seq: int, invoke_id: Optional[str] = None) -> Optional[NodeRun]:
+    def run_at(self, seq: int, invoke_id: str | None = None) -> NodeRun | None:
         """The node run whose execution window contains ``seq`` (used for injection events)."""
         active = [r for r in self.runs if r.contains(seq) and (invoke_id is None or r.invoke_id == invoke_id)]
         return active[-1] if active else None
@@ -220,7 +220,7 @@ class ExecutionGraph:
         ordered = sorted(self.runs, key=lambda r: r.start_seq)
         for dst in ordered:
             for pred_name in self._static_predecessors(dst.name):
-                writer: Optional[NodeRun] = None
+                writer: NodeRun | None = None
                 for src in ordered:
                     if src is dst or src.name != pred_name:
                         continue
@@ -249,7 +249,7 @@ class ExecutionGraph:
         self._in.setdefault(dst.id, []).append(edge)
 
     # ---- queries ------------------------------------------------------------------------------
-    def get(self, run_id: str) -> Optional[NodeRun]:
+    def get(self, run_id: str) -> NodeRun | None:
         return self._by_id.get(run_id)
 
     def successors(self, run_id: str) -> list[NodeRun]:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.callbacks import BaseCallbackHandler
 
@@ -25,19 +25,19 @@ class FirebreakTracer(BaseCallbackHandler):
 
     # ---- helpers -------------------------------------------------------------------
     @staticmethod
-    def _ctx(metadata: Optional[dict]) -> tuple:
+    def _ctx(metadata: dict | None) -> tuple:
         md = metadata or {}
         triggers = md.get("langgraph_triggers") or []
         return md.get("langgraph_node"), md.get("langgraph_step"), [str(t) for t in triggers]
 
-    def _remember(self, run_id: Any, name: str, metadata: Optional[dict]) -> None:
+    def _remember(self, run_id: Any, name: str, metadata: dict | None) -> None:
         self._names[str(run_id)] = name
         self._ctx_by_run[str(run_id)] = self._ctx(metadata)
 
-    def _recall(self, run_id: Any) -> tuple[str, Optional[tuple]]:
+    def _recall(self, run_id: Any) -> tuple[str, tuple | None]:
         return self._names.get(str(run_id), ""), self._ctx_by_run.get(str(run_id))
 
-    def _emit(self, kind: str, name: str, run_id: Any, parent_run_id: Any, ctx: Optional[tuple], payload: dict) -> Event:
+    def _emit(self, kind: str, name: str, run_id: Any, parent_run_id: Any, ctx: tuple | None, payload: dict) -> Event:
         node, step, triggers = ctx if ctx else (None, None, [])
         return self.trace.add(
             Event(
@@ -53,7 +53,7 @@ class FirebreakTracer(BaseCallbackHandler):
         )
 
     @staticmethod
-    def _name_of(serialized: Optional[dict], kwargs: dict, default: str) -> str:
+    def _name_of(serialized: dict | None, kwargs: dict, default: str) -> str:
         return (serialized or {}).get("name") or kwargs.get("name") or default
 
     # ---- tools -----------------------------------------------------------------------

@@ -91,7 +91,7 @@ def main(argv: list[str] | None = None) -> int:
         delay = "-" if r["detection_delay"] is None else str(r["detection_delay"])
         ovh = "-" if r["overhead"] is None else f"{r['overhead']:.1f}x"
         flag = "" if r["predicted_cascade"] == r["true_cascade"] else " <- mismatch"
-        print(f"{r['scenario']:<22}{str(r['predicted_cascade']):<9}{src:<12}{f1:<8}{r['blast_radius']:<7.0%}{delay:<7}{r['outcome']:<9}{ovh:<6}{flag}")
+        print(f"{r['scenario']:<22}{r['predicted_cascade']!s:<9}{src:<12}{f1:<8}{r['blast_radius']:<7.0%}{delay:<7}{r['outcome']:<9}{ovh:<6}{flag}")
     print()
     print(json.dumps(summary, indent=2))
 

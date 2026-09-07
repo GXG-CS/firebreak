@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Iterable, Optional
+from typing import Any
 
 from firebreak.detection.signals import detect
 from firebreak.graph.execution import ExecutionGraph
@@ -56,11 +57,11 @@ def load_example(path: str) -> Any:
 def analyze(
     trace: Trace,
     outcome: str,
-    validators: Optional[dict] = None,
-    injected: Optional[list] = None,
-    marker: Optional[str] = DEFAULT_MARKER,
+    validators: dict | None = None,
+    injected: list | None = None,
+    marker: str | None = DEFAULT_MARKER,
     oracle: bool = False,
-    sensitive_tools: Optional[Iterable[str]] = None,
+    sensitive_tools: Iterable[str] | None = None,
 ) -> Analysis:
     graph = ExecutionGraph.from_trace(trace)
     signals = detect(trace, graph, validators=validators, marker=marker, oracle=oracle)
@@ -75,7 +76,7 @@ def analyze(
     return Analysis(trace=trace, graph=graph, signals=signals, propagation=propagation, report=report)
 
 
-def run_app(app: App, plan: Optional[FaultPlan] = None, *, save: Optional[str] = None, config: Optional[dict] = None) -> Analysis:
+def run_app(app: App, plan: FaultPlan | None = None, *, save: str | None = None, config: dict | None = None) -> Analysis:
     """Record one run of ``app`` (with ``plan`` already applied at build time) and analyse it."""
     trace = Trace()
     if plan is not None:

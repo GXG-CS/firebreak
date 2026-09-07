@@ -11,18 +11,39 @@ import argparse
 import json
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 from firebreak.injection.faults import FaultPlan
-from firebreak.integrations.tau2_airline.mas import SENSITIVE_TOOLS, TRANSFORMS, Tau2LangGraphMAS, build_tau2_mas, make_model
-from firebreak.integrations.tau2_airline.vendor.domain import create_airline_tools, load_db, load_policy, load_task
-from firebreak.integrations.tau2_airline.vendor.evaluation import _apply_initial_state, evaluate_task, score_tau2_episode
+from firebreak.integrations.tau2_airline.mas import (
+    SENSITIVE_TOOLS,
+    TRANSFORMS,
+    Tau2LangGraphMAS,
+    build_tau2_mas,
+    make_model,
+)
+from firebreak.integrations.tau2_airline.vendor.domain import (
+    create_airline_tools,
+    load_db,
+    load_policy,
+    load_task,
+)
+from firebreak.integrations.tau2_airline.vendor.evaluation import (
+    _apply_initial_state,
+    evaluate_task,
+    score_tau2_episode,
+)
 from firebreak.integrations.tau2_airline.vendor.user_sim import UserSimulator
 from firebreak.runner import Analysis, analyze
 from firebreak.tracing.recorder import Trace
 
 DEFAULT_MAX_TURNS = 30
 STOP_TOKEN = "###STOP###"
+FAREWELLS = ("goodbye", "bye", "au revoir", "a bientot", "à bientôt", "take care", "bonne journée", "have a nice day", "that is all", "that's all")
+
+
+def _is_farewell(text: str) -> bool:
+    lowered = text.lower()
+    return any(f in lowered for f in FAREWELLS) and "?" not in lowered
 
 
 @dataclass
@@ -57,8 +78,8 @@ class EpisodeResult:
     terminated_by: str
     transcript: list = field(default_factory=list)
     tool_calls: list = field(default_factory=list)
-    trace: Optional[Trace] = None
-    analysis: Optional[Analysis] = None
+    trace: Trace | None = None
+    analysis: Analysis | None = None
 
     @property
     def outcome(self) -> str:
@@ -129,7 +150,7 @@ class ScriptedUser:
         return "Please go ahead and cancel all of them, even without a refund."
 
 
-def make_user(model: str, task: dict, user_model: Optional[str] = None):
+def make_user(model: str, task: dict, user_model: str | None = None):
     if model == "fake" and user_model in (None, "fake"):
         return ScriptedUser(task)
     return UserSimulator(model=make_model(user_model or "openai"), scenario=task.get("user_scenario", {}))
@@ -139,10 +160,10 @@ def run_episode(
     task_id: str,
     *,
     model: str = "fake",
-    inject: Optional[list] = None,
+    inject: list | None = None,
     max_turns: int = DEFAULT_MAX_TURNS,
-    user_model: Optional[str] = None,
-    save: Optional[str] = None,
+    user_model: str | None = None,
+    save: str | None = None,
     marker: str = "",
     oracle: bool = True,
 ) -> EpisodeResult:
@@ -164,6 +185,7 @@ def run_episode(
 
     user_msg = user.get_opening_message()
     transcript.append(Message("user", user_msg))
+    farewells = 0
     for turn in range(max_turns):
         agent_msg = mas.turn(user_msg, thread_id, trace=trace, episode_id=episode_id, turn=turn)
         transcript.append(Message("assistant", agent_msg))
@@ -175,6 +197,11 @@ def run_episode(
         transcript.append(Message("user", user_msg))
         if user.is_done:
             terminated_by = "user_stop"
+            break
+        # weak simulators sometimes never emit the stop token; two consecutive farewell exchanges end the episode
+        farewells = farewells + 1 if (_is_farewell(agent_msg) and _is_farewell(user_msg)) else 0
+        if farewells >= 2:
+            terminated_by = "farewell_loop"
             break
 
     reward = evaluate_task(actual_db=env.db, tool_log=env.tool_log, messages=transcript, task=env.task)
@@ -202,7 +229,7 @@ def run_episode(
     )
 
 
-def main(argv: Optional[list[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run one tau2 airline episode with the Firebreak LangGraph MAS.")
     parser.add_argument("--task", default="39")
     parser.add_argument("--model", default="fake", help="fake | openai")
@@ -220,6 +247,9 @@ def main(argv: Optional[list[str]] = None) -> int:
     print(f"tau2 airline task {result.task_id}  model={result.model}  faults={result.faults or 'none'}")
     print(f"reward={result.reward:.2f}  db={result.db_score:.0f}  communicate={result.communicate_score:.2f}  success={result.success}  reasons={result.success_reasons or '-'}")
     print(f"turns={result.turns}  terminated_by={result.terminated_by}  tool_calls={[c['name'] for c in result.tool_calls]}")
+    ineffective = [e.payload.get("fault_id") for e in result.trace.of_kind("injection") if not e.payload.get("effective", True)]
+    if ineffective:
+        print(f"note: injections {ineffective} were applied but changed nothing (transform found nothing to swap)")
     print()
     print(result.analysis.report.render())
     if args.out:

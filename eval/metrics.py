@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Iterable, Optional
+from collections.abc import Iterable
 
 
 def precision_recall(outcomes: Iterable[tuple[bool, bool]]) -> dict:
@@ -22,13 +22,13 @@ def precision_recall(outcomes: Iterable[tuple[bool, bool]]) -> dict:
     return {"tp": tp, "fp": fp, "fn": fn, "tn": tn, "precision": precision, "recall": recall}
 
 
-def source_attribution(pred_node: Optional[str], true_node: Optional[str]) -> Optional[bool]:
+def source_attribution(pred_node: str | None, true_node: str | None) -> bool | None:
     if true_node is None:
         return None
     return pred_node == true_node
 
 
-def path_f1(pred_path: Iterable[str], true_path: Iterable[str]) -> Optional[float]:
+def path_f1(pred_path: Iterable[str], true_path: Iterable[str]) -> float | None:
     pred, truth = set(pred_path), set(true_path)
     if not truth:
         return None
@@ -40,7 +40,7 @@ def path_f1(pred_path: Iterable[str], true_path: Iterable[str]) -> Optional[floa
     return 0.0 if (precision + recall) == 0 else 2 * precision * recall / (precision + recall)
 
 
-def blast_radius_error(pred_radius: float, true_affected: int, total: int) -> Optional[float]:
+def blast_radius_error(pred_radius: float, true_affected: int, total: int) -> float | None:
     if not total:
         return None
     return abs(pred_radius - true_affected / total)
@@ -54,7 +54,7 @@ def summarize(rows: list[dict]) -> dict:
     radius_errors = [r["blast_radius_error"] for r in rows if r.get("blast_radius_error") is not None]
     delays = [r["detection_delay"] for r in rows if r.get("detection_delay") is not None]
     overheads = [r["overhead"] for r in rows if r.get("overhead") is not None]
-    mean = lambda xs: (sum(xs) / len(xs)) if xs else None  # noqa: E731
+    mean = lambda xs: (sum(xs) / len(xs)) if xs else None
     return {
         "scenarios": len(rows),
         "cascade_detection": det,

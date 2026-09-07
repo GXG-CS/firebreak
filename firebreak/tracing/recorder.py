@@ -10,7 +10,8 @@ from __future__ import annotations
 import json
 import time
 import uuid
-from typing import Any, Iterable, Optional
+from collections.abc import Iterable
+from typing import Any
 
 from firebreak.tracing.callbacks import FirebreakTracer
 from firebreak.tracing.events import Event, safe
@@ -55,11 +56,10 @@ class Trace:
     def to_jsonl(self, path: str) -> None:
         with open(path, "w", encoding="utf-8") as handle:
             handle.write(json.dumps({"__meta__": self.meta}, default=str) + "\n")
-            for event in self.events:
-                handle.write(json.dumps(event.to_dict(), default=str) + "\n")
+            handle.writelines(json.dumps(event.to_dict(), default=str) + "\n" for event in self.events)
 
     @classmethod
-    def from_jsonl(cls, path: str) -> "Trace":
+    def from_jsonl(cls, path: str) -> Trace:
         trace = cls()
         with open(path, encoding="utf-8") as handle:
             for line in handle:
@@ -79,7 +79,7 @@ class Trace:
 
 # ---- debug-stream ingestion -------------------------------------------------------------
 
-def _task_id(payload: dict) -> Optional[str]:
+def _task_id(payload: dict) -> str | None:
     value = payload.get("id")
     return str(value) if value is not None else None
 
@@ -218,13 +218,13 @@ def record(
     graph: Any,
     input: Any,
     *,
-    config: Optional[dict] = None,
-    trace: Optional[Trace] = None,
-    thread_id: Optional[str] = None,
-    extra_callbacks: Optional[Iterable[Any]] = None,
-    episode_id: Optional[str] = None,
-    turn: Optional[int] = None,
-    invoke_id: Optional[str] = None,
+    config: dict | None = None,
+    trace: Trace | None = None,
+    thread_id: str | None = None,
+    extra_callbacks: Iterable[Any] | None = None,
+    episode_id: str | None = None,
+    turn: int | None = None,
+    invoke_id: str | None = None,
 ) -> Trace:
     """Run ``graph`` on ``input`` once and append everything to a Trace.
 
@@ -249,7 +249,7 @@ def record(
     started = time.time()
     trace.meta.setdefault("started", started)
     last_values: Any = None
-    error: Optional[str] = None
+    error: str | None = None
     try:
         try:
             for mode, chunk in _iter_stream(graph.stream(input, cfg, stream_mode=["debug", "values"])):

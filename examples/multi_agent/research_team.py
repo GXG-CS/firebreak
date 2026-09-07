@@ -19,13 +19,12 @@ from __future__ import annotations
 
 import os
 import re
-from typing import Any, Optional, TypedDict
-
-from langchain_core.runnables import RunnableConfig
+from typing import Any, TypedDict
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, START, StateGraph
 
 from firebreak.injection.faults import FaultPlan
@@ -53,7 +52,7 @@ class TeamState(TypedDict, total=False):
 
 # ---- models ---------------------------------------------------------------------------------
 
-def _year_in(text: str) -> Optional[str]:
+def _year_in(text: str) -> str | None:
     match = re.search(r"\b(19|20)\d{2}\b", text or "")
     return match.group(0) if match else None
 
@@ -107,7 +106,7 @@ def _make_model(model: str) -> BaseChatModel:
 
 # ---- build ------------------------------------------------------------------------------------
 
-def build(model: str = "fake", plan: Optional[FaultPlan] = None) -> App:
+def build(model: str = "fake", plan: FaultPlan | None = None) -> App:
     plan = plan or FaultPlan()
     llm = _make_model(model)
 

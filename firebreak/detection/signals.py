@@ -7,26 +7,27 @@ containment experiments separate "can we contain a known-bad message" from "can 
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
-from typing import Any, Callable, Optional
+from typing import Any
 
 from firebreak.graph.execution import ExecutionGraph
 from firebreak.injection.faults import DEFAULT_MARKER
 from firebreak.tracing.recorder import Trace
 
-Validator = Callable[[dict], Optional[str]]
+Validator = Callable[[dict], str | None]
 
 
 @dataclass
 class Signal:
     kind: str  # tool_error | timeout | node_error | corruption_marker | validator_failure | injected_fault | custom
-    node: Optional[str]
-    step: Optional[int]
+    node: str | None
+    step: int | None
     seq: int
     name: str
     detail: str
-    run_id: Optional[str] = None
-    turn: Optional[int] = None
+    run_id: str | None = None
+    turn: int | None = None
     oracle: bool = False
 
     @property
@@ -51,9 +52,9 @@ def _blob(value: Any) -> str:
 def detect(
     trace: Trace,
     graph: ExecutionGraph,
-    validators: Optional[dict[str, Validator]] = None,
-    marker: Optional[str] = DEFAULT_MARKER,
-    custom: Optional[Callable[[Trace, ExecutionGraph], list]] = None,
+    validators: dict[str, Validator] | None = None,
+    marker: str | None = DEFAULT_MARKER,
+    custom: Callable[[Trace, ExecutionGraph], list] | None = None,
     oracle: bool = False,
 ) -> list[Signal]:
     """Return explicit fault signals found in the trace, earliest first."""
@@ -102,8 +103,10 @@ def detect(
                     add(Signal("validator_failure", event.node, event.step, event.seq, event.name, str(problem), turn=event.turn),
                         graph.locate(event.node, event.step, event.seq, event.invoke_id))
         elif event.kind == "injection" and oracle:
-            run = graph.run_at(event.seq, event.invoke_id)
             payload = event.payload or {}
+            if not payload.get("effective", True):
+                continue  # the fault was applied but changed nothing; no cascade can start here
+            run = graph.run_at(event.seq, event.invoke_id)
             detail = f"{payload.get('fault_id', '?')} {payload.get('kind', '')}:{payload.get('target', '')} (oracle: injection record)"
             add(Signal("injected_fault", run.name if run else payload.get("target"), run.step if run else None, event.seq, str(payload.get("target", "")), detail, turn=event.turn, oracle=True), run)
 
@@ -116,5 +119,5 @@ def detect(
     return signals
 
 
-def source_of(signals: list[Signal]) -> Optional[Signal]:
+def source_of(signals: list[Signal]) -> Signal | None:
     return signals[0] if signals else None

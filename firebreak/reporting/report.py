@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass, field
-from typing import Any, Iterable, Optional
+from typing import Any
 
 from firebreak.detection.signals import Signal
 from firebreak.graph.execution import ExecutionGraph
@@ -16,7 +17,7 @@ from firebreak.tracing.recorder import Trace
 class CascadeReport:
     detected: bool
     outcome: str
-    source: Optional[dict] = None
+    source: dict | None = None
     injected: list = field(default_factory=list)
     signals: list = field(default_factory=list)
     path: list = field(default_factory=list)  # node names, BFS order from the source
@@ -24,11 +25,11 @@ class CascadeReport:
     affected: int = 0
     total: int = 0
     blast_radius: float = 0.0
-    detection_delay: Optional[int] = None
+    detection_delay: int | None = None
     wall_time: float = 0.0
     node_runs: list = field(default_factory=list)
-    propagation_vs_content: Optional[dict] = None
-    turns: Optional[int] = None
+    propagation_vs_content: dict | None = None
+    turns: int | None = None
     reached: dict = field(default_factory=dict)  # node name -> bool
     harmful_actions: list = field(default_factory=list)  # sensitive tool calls made by affected runs
 
@@ -122,7 +123,7 @@ def _path_names(graph: ExecutionGraph, propagation: Propagation) -> list[str]:
     return names
 
 
-def _injection_step(trace: Trace, graph: ExecutionGraph) -> Optional[int]:
+def _injection_step(trace: Trace, graph: ExecutionGraph) -> int | None:
     for event in trace.events:
         if event.kind != "injection":
             continue
@@ -135,11 +136,11 @@ def build_report(
     trace: Trace,
     graph: ExecutionGraph,
     signals: list[Signal],
-    propagation: Optional[Propagation],
+    propagation: Propagation | None,
     outcome: str,
-    injected: Optional[list] = None,
-    content_tainted: Optional[list] = None,
-    sensitive_tools: Optional[Iterable[str]] = None,
+    injected: list | None = None,
+    content_tainted: list | None = None,
+    sensitive_tools: Iterable[str] | None = None,
 ) -> CascadeReport:
     source = signals[0] if signals else None
     turns = trace.turns

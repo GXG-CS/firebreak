@@ -67,6 +67,21 @@ timeouts, injected corruption, validator failures, and user-defined detectors. I
 detect hallucinations or semantic inconsistency. Mitigation, prevention, and semantic detectors come
 later; see `docs/ROADMAP.md`.
 
+## A real environment, not a toy
+
+`firebreak/integrations/tau2_airline/` runs a Supervisor + Lookup + Booking LangGraph team on the
+τ²-bench airline domain (vendored, MIT): real tools, a real database, and an objective evaluator.
+One corrupted report from the lookup specialist becomes a cancellation of the wrong reservation:
+
+```bash
+python -m firebreak.integrations.tau2_airline.runner --task 39 --model fake        # scripted team, no LLM
+python -m firebreak.integrations.tau2_airline.runner --task 39 --model fake \
+    --inject message_corruption:lookup:1:swap_first_eligible_reservation
+```
+
+With a local Qwen2.5-14B behind `--model openai` the clean run passes the task and the faulted run
+fails it; see `docs/FIRST_CASCADE.md` for the full traces.
+
 ## Evaluation from day one
 
 `benchmarks/` holds scenarios with ground truth (injected source, true propagation path, expected

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import asdict, dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 MAX_TEXT = 4000
 MAX_ITEMS = 64
@@ -36,7 +36,7 @@ def safe(value: Any, depth: int = 0) -> Any:
         # LangChain message objects.
         out: dict[str, Any] = {
             "type": getattr(value, "type", None),
-            "content": safe(getattr(value, "content"), depth + 1),
+            "content": safe(value.content, depth + 1),
         }
         for attr in ("name", "tool_call_id", "id"):
             val = getattr(value, attr, None)
@@ -71,22 +71,22 @@ class Event:
 
     kind: str
     name: str = ""
-    node: Optional[str] = None
-    step: Optional[int] = None
-    task_id: Optional[str] = None
-    run_id: Optional[str] = None
-    parent_run_id: Optional[str] = None
+    node: str | None = None
+    step: int | None = None
+    task_id: str | None = None
+    run_id: str | None = None
+    parent_run_id: str | None = None
     triggers: list = field(default_factory=list)
     payload: dict = field(default_factory=dict)
     ts: float = field(default_factory=time.time)
     seq: int = 0
-    episode_id: Optional[str] = None
-    turn: Optional[int] = None
-    invoke_id: Optional[str] = None
+    episode_id: str | None = None
+    turn: int | None = None
+    invoke_id: str | None = None
 
     def to_dict(self) -> dict:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Event":
+    def from_dict(cls, data: dict) -> Event:
         return cls(**data)

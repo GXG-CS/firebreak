@@ -11,9 +11,9 @@ from firebreak.tracing.recorder import Trace, record
 __version__ = "0.1.0.dev0"
 
 __all__ = [
+    "DEFAULT_MARKER",
     "App",
     "CascadeReport",
-    "DEFAULT_MARKER",
     "ExecutionGraph",
     "Fault",
     "FaultPlan",

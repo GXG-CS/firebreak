@@ -21,8 +21,9 @@ from __future__ import annotations
 import json
 import os
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Annotated, Any, Callable, Optional, TypedDict
+from typing import Annotated, Any, TypedDict
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage, ToolMessage
@@ -61,26 +62,38 @@ BOOKING_READ_TOOLS = {"get_reservation_details", "calculate"}
 
 CURRENT_DATE = "2024-05-15"
 
-SUPERVISOR_PROMPT = """You are the supervisor of an airline customer-service team. You are the only one who talks to the customer.
-You never call airline tools yourself. You have two specialists:
+SUPERVISOR_PROMPT = """You are the supervisor of an airline customer-service team. You are the only one who talks to the customer, and you never call airline tools yourself. You have two specialists:
 - delegate_to_lookup(request): a read-only specialist that looks up users, reservations, flights and status.
 - delegate_to_booking(instruction): a specialist that executes confirmed changes (cancel, book, update, certificates).
-Delegate one task at a time, wait for the report, then decide. Before delegating a change, make sure the policy allows it and the customer confirmed. When nothing else is needed, reply to the customer in plain text.
+
+How to work:
+1. Never ask the customer for information a specialist can look up. A user id is enough to find every reservation; do not ask for names, dates of birth or reservation ids.
+2. As soon as you know the user id and what the customer wants, delegate to lookup with a precise request (for example: "list ALL reservations of user X with dates, cabin, insurance, status, and whether each one is eligible for cancellation under the policy").
+3. Read the report and apply the policy yourself. Only reservations the report lists as eligible may be cancelled; reservations marked past (any flight already flown) or not eligible can never be cancelled, even if the customer insists or accepts losing the refund. Tell the customer which ones you cannot cancel and why. Confirm the concrete action once (the exact reservation ids and the reason), then delegate it to booking in one instruction that lists exactly those ids.
+4. Delegate one task at a time and wait for the report. Answer in the customer's language.
+5. When the request is complete, give one short closing message and stop; do not keep exchanging goodbyes.
 Today is {current_date}.
 
 <policy>
 {policy}
 </policy>"""
 
-LOOKUP_PROMPT = """You are the lookup specialist of an airline customer-service team. You have read-only tools.
-Fulfil the supervisor's request using the tools, then reply with ONE concise report containing every fact you found (ids, dates, cabins, insurance, statuses). Do not take actions and do not talk to the customer.
+LOOKUP_PROMPT = """You are the lookup specialist of an airline customer-service team. You have read-only tools and you never take actions or talk to the customer.
+Fulfil the supervisor's request completely: when asked about a user's reservations, call get_user_details, then get_reservation_details for EVERY reservation id it lists. Then reply with ONE report in this shape:
+Reservations for user <id>:
+- <reservation_id>: <origin>-><destination> <flight dates>, cabin <cabin>, insurance <yes/no>, <upcoming|past>
+...
+Eligible for cancellation: <ids or none>
+Not eligible: <ids or none>
+Past reservations: <ids or none>
+Judge eligibility in two steps. First: a reservation whose flights are all before today is past; a past reservation is NEVER eligible, whatever its cabin or insurance, and must appear only under "Past reservations". Second, among upcoming reservations only: business class or travel insurance allow cancellation for a change of plans; basic economy without insurance does not. The "Eligible for cancellation" line may contain only upcoming, eligible ids. Report facts only.
 Today is {current_date}.
 
 <policy>
 {policy}
 </policy>"""
 
-BOOKING_PROMPT = """You are the booking specialist of an airline customer-service team. You execute the supervisor's confirmed instruction using your tools, exactly as instructed, then reply with ONE concise report of what you did and the results. Do not talk to the customer.
+BOOKING_PROMPT = """You are the booking specialist of an airline customer-service team. Execute the supervisor's confirmed instruction with your tools, exactly as instructed and for every reservation id it lists, then reply with ONE concise report: which tool you called for which id and the result. Do not re-check policy, do not add or skip actions, and do not talk to the customer.
 Today is {current_date}.
 
 <policy>
@@ -105,9 +118,9 @@ class Tau2LangGraphMAS:
         user_message: str,
         thread_id: str,
         *,
-        trace: Optional[Trace] = None,
-        episode_id: Optional[str] = None,
-        turn: Optional[int] = None,
+        trace: Trace | None = None,
+        episode_id: str | None = None,
+        turn: int | None = None,
     ) -> str:
         """Feed one user message through the graph and return the supervisor's reply text."""
         config = {"configurable": {"thread_id": thread_id}, "recursion_limit": self.recursion_limit}
@@ -145,7 +158,7 @@ def build_tau2_mas(
     model: BaseChatModel,
     tools: list,
     policy: str,
-    plan: Optional[FaultPlan] = None,
+    plan: FaultPlan | None = None,
     *,
     worker_max_steps: int = 10,
 ) -> Tau2LangGraphMAS:
@@ -281,7 +294,7 @@ class ScriptedAirlineModel(BaseChatModel):
     def _llm_type(self) -> str:
         return "scripted-airline"
 
-    def bind_tools(self, tools: Any, **kwargs: Any) -> Any:  # noqa: D401 - LangChain hook
+    def bind_tools(self, tools: Any, **kwargs: Any) -> Any:
         return self.bind(tools=tools, **kwargs)
 
     def _next_id(self) -> str:
@@ -374,7 +387,7 @@ class ScriptedAirlineModel(BaseChatModel):
         return AIMessage(content=f"Done. Cancelled reservations: {', '.join(ids)}. Tool results: {', '.join(done)}.")
 
 
-def _json(text: Optional[str]) -> Optional[dict]:
+def _json(text: str | None) -> dict | None:
     if not text:
         return None
     try:
