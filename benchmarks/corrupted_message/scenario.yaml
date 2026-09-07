@@ -1,0 +1,11 @@
+name: corrupted_message
+description: researcher's outgoing message is corrupted; it propagates but the task still passes.
+example: examples/multi_agent/research_team.py
+model: fake
+inject:
+  - "message_corruption:researcher"
+ground_truth:
+  cascade: true
+  source_node: researcher
+  path: [researcher, reviewer, planner, executor]
+  outcome: PASSED

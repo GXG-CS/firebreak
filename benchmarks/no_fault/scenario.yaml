@@ -1,0 +1,8 @@
+name: no_fault
+description: clean run; nothing must be reported.
+example: examples/multi_agent/research_team.py
+model: fake
+inject: []
+ground_truth:
+  cascade: false
+  outcome: PASSED

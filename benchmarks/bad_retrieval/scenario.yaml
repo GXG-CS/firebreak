@@ -1,0 +1,12 @@
+name: bad_retrieval
+description: search_web returns a wrong fact; every downstream agent trusts it.
+example: examples/multi_agent/research_team.py
+model: fake
+inject:
+  - "tool_bad_output:search_web:1:Firebreak launched in 1999."
+ground_truth:
+  cascade: true
+  source_node: researcher
+  source_tool: search_web
+  path: [researcher, reviewer, planner, executor]
+  outcome: FAILED

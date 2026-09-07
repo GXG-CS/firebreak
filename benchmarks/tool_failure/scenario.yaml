@@ -1,0 +1,12 @@
+name: tool_failure
+description: search_web raises; researcher swallows the error and guesses; the guess reaches the executor.
+example: examples/multi_agent/research_team.py
+model: fake
+inject:
+  - "tool_error:search_web"
+ground_truth:
+  cascade: true
+  source_node: researcher
+  source_tool: search_web
+  path: [researcher, reviewer, planner, executor]
+  outcome: FAILED
