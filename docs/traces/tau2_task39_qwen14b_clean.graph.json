@@ -1,0 +1,338 @@
+{
+  "runs": [
+    {
+      "id": "t0:33589786-bcc0-fa74-bf2e-f7c43a3c6104",
+      "name": "supervisor",
+      "step": 1,
+      "turn": 0,
+      "invoke_id": "t0",
+      "triggers": [
+        "branch:to:supervisor"
+      ],
+      "writes": [
+        "messages"
+      ],
+      "error": null,
+      "tools": [],
+      "models": 1,
+      "label": "supervisor@1 (turn 0)",
+      "tool_calls": [],
+      "model_calls": 1
+    },
+    {
+      "id": "t1:a0ef0e25-b19b-2742-f345-934980d90c9d",
+      "name": "supervisor",
+      "step": 4,
+      "turn": 1,
+      "invoke_id": "t1",
+      "triggers": [
+        "branch:to:supervisor"
+      ],
+      "writes": [
+        "messages"
+      ],
+      "error": null,
+      "tools": [],
+      "models": 1,
+      "label": "supervisor@4 (turn 1)",
+      "tool_calls": [],
+      "model_calls": 1
+    },
+    {
+      "id": "t1:bbd4000f-1bbd-c72b-3d52-141401560e75",
+      "name": "lookup",
+      "step": 5,
+      "turn": 1,
+      "invoke_id": "t1",
+      "triggers": [
+        "branch:to:lookup"
+      ],
+      "writes": [
+        "messages"
+      ],
+      "error": null,
+      "tools": [
+        "get_user_details",
+        "get_reservation_details",
+        "get_reservation_details",
+        "get_reservation_details",
+        "get_reservation_details",
+        "get_reservation_details",
+        "get_reservation_details",
+        "get_reservation_details"
+      ],
+      "models": 3,
+      "label": "lookup@5 (turn 1)",
+      "tool_calls": [
+        {
+          "name": "get_user_details",
+          "input": {
+            "user_id": "amelia_davis_8890"
+          },
+          "failed": false
+        },
+        {
+          "name": "get_reservation_details",
+          "input": {
+            "reservation_id": "8C8K4E"
+          },
+          "failed": false
+        },
+        {
+          "name": "get_reservation_details",
+          "input": {
+            "reservation_id": "UDMOP1"
+          },
+          "failed": false
+        },
+        {
+          "name": "get_reservation_details",
+          "input": {
+            "reservation_id": "XAZ3C0"
+          },
+          "failed": false
+        },
+        {
+          "name": "get_reservation_details",
+          "input": {
+            "reservation_id": "LU15PA"
+          },
+          "failed": false
+        },
+        {
+          "name": "get_reservation_details",
+          "input": {
+            "reservation_id": "MSJ4OA"
+          },
+          "failed": false
+        },
+        {
+          "name": "get_reservation_details",
+          "input": {
+            "reservation_id": "I6M8JQ"
+          },
+          "failed": false
+        },
+        {
+          "name": "get_reservation_details",
+          "input": {
+            "reservation_id": "4XGCCM"
+          },
+          "failed": false
+        }
+      ],
+      "model_calls": 3
+    },
+    {
+      "id": "t1:9799c3dd-fb74-fb65-6172-9e6b9ba0941f",
+      "name": "supervisor",
+      "step": 6,
+      "turn": 1,
+      "invoke_id": "t1",
+      "triggers": [
+        "branch:to:supervisor"
+      ],
+      "writes": [
+        "messages"
+      ],
+      "error": null,
+      "tools": [],
+      "models": 1,
+      "label": "supervisor@6 (turn 1)",
+      "tool_calls": [],
+      "model_calls": 1
+    },
+    {
+      "id": "t2:4f0999d9-973a-0c8c-1187-d0f501b54be8",
+      "name": "supervisor",
+      "step": 9,
+      "turn": 2,
+      "invoke_id": "t2",
+      "triggers": [
+        "branch:to:supervisor"
+      ],
+      "writes": [
+        "messages"
+      ],
+      "error": null,
+      "tools": [],
+      "models": 1,
+      "label": "supervisor@9 (turn 2)",
+      "tool_calls": [],
+      "model_calls": 1
+    },
+    {
+      "id": "t2:08dd1134-60bf-64c4-a027-ecd6c8a2c3cc",
+      "name": "booking",
+      "step": 10,
+      "turn": 2,
+      "invoke_id": "t2",
+      "triggers": [
+        "branch:to:booking"
+      ],
+      "writes": [
+        "messages"
+      ],
+      "error": null,
+      "tools": [
+        "cancel_reservation",
+        "cancel_reservation",
+        "cancel_reservation"
+      ],
+      "models": 2,
+      "label": "booking@10 (turn 2)",
+      "tool_calls": [
+        {
+          "name": "cancel_reservation",
+          "input": {
+            "reservation_id": "8C8K4E"
+          },
+          "failed": false
+        },
+        {
+          "name": "cancel_reservation",
+          "input": {
+            "reservation_id": "LU15PA"
+          },
+          "failed": false
+        },
+        {
+          "name": "cancel_reservation",
+          "input": {
+            "reservation_id": "MSJ4OA"
+          },
+          "failed": false
+        }
+      ],
+      "model_calls": 2
+    },
+    {
+      "id": "t2:7f8763f8-19b5-fae4-d73c-fb170480e84c",
+      "name": "supervisor",
+      "step": 11,
+      "turn": 2,
+      "invoke_id": "t2",
+      "triggers": [
+        "branch:to:supervisor"
+      ],
+      "writes": [
+        "messages"
+      ],
+      "error": null,
+      "tools": [],
+      "models": 1,
+      "label": "supervisor@11 (turn 2)",
+      "tool_calls": [],
+      "model_calls": 1
+    }
+  ],
+  "edges": [
+    {
+      "src": "t1:a0ef0e25-b19b-2742-f345-934980d90c9d",
+      "dst": "t1:bbd4000f-1bbd-c72b-3d52-141401560e75",
+      "via": [
+        "supervisor->lookup"
+      ],
+      "data_keys": [
+        "messages"
+      ],
+      "cross_turn": false
+    },
+    {
+      "src": "t1:bbd4000f-1bbd-c72b-3d52-141401560e75",
+      "dst": "t1:9799c3dd-fb74-fb65-6172-9e6b9ba0941f",
+      "via": [
+        "lookup->supervisor"
+      ],
+      "data_keys": [
+        "messages"
+      ],
+      "cross_turn": false
+    },
+    {
+      "src": "t1:bbd4000f-1bbd-c72b-3d52-141401560e75",
+      "dst": "t2:4f0999d9-973a-0c8c-1187-d0f501b54be8",
+      "via": [
+        "lookup->supervisor"
+      ],
+      "data_keys": [
+        "messages"
+      ],
+      "cross_turn": true
+    },
+    {
+      "src": "t2:4f0999d9-973a-0c8c-1187-d0f501b54be8",
+      "dst": "t2:08dd1134-60bf-64c4-a027-ecd6c8a2c3cc",
+      "via": [
+        "supervisor->booking"
+      ],
+      "data_keys": [
+        "messages"
+      ],
+      "cross_turn": false
+    },
+    {
+      "src": "t2:08dd1134-60bf-64c4-a027-ecd6c8a2c3cc",
+      "dst": "t2:7f8763f8-19b5-fae4-d73c-fb170480e84c",
+      "via": [
+        "booking->supervisor"
+      ],
+      "data_keys": [
+        "messages"
+      ],
+      "cross_turn": false
+    },
+    {
+      "src": "t1:bbd4000f-1bbd-c72b-3d52-141401560e75",
+      "dst": "t2:7f8763f8-19b5-fae4-d73c-fb170480e84c",
+      "via": [
+        "lookup->supervisor"
+      ],
+      "data_keys": [
+        "messages"
+      ],
+      "cross_turn": true
+    }
+  ],
+  "static_graph": {
+    "nodes": [
+      "__start__",
+      "supervisor",
+      "lookup",
+      "booking",
+      "__end__"
+    ],
+    "edges": [
+      {
+        "source": "__start__",
+        "target": "supervisor",
+        "conditional": false
+      },
+      {
+        "source": "booking",
+        "target": "supervisor",
+        "conditional": false
+      },
+      {
+        "source": "lookup",
+        "target": "supervisor",
+        "conditional": false
+      },
+      {
+        "source": "supervisor",
+        "target": "__end__",
+        "conditional": true
+      },
+      {
+        "source": "supervisor",
+        "target": "booking",
+        "conditional": true
+      },
+      {
+        "source": "supervisor",
+        "target": "lookup",
+        "conditional": true
+      }
+    ]
+  }
+}

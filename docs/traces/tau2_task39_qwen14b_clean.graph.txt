@@ -1,0 +1,35 @@
+# ExecutionGraph reconstructed from tau2_task39_qwen14b_clean.jsonl
+
+static edges declared by the compiled graph: [('__start__', 'supervisor'), ('booking', 'supervisor'), ('lookup', 'supervisor'), ('supervisor', '__end__'), ('supervisor', 'booking'), ('supervisor', 'lookup')]
+7 node runs, 6 data-flow edges
+
+## Node runs
+
+id                         node         turn step  writes       tools
+t0:33589786-bcc0-fa74-bf2e-f7c43a3c6104 supervisor      0    1  messages     
+t1:a0ef0e25-b19b-2742-f345-934980d90c9d supervisor      1    4  messages     
+t1:bbd4000f-1bbd-c72b-3d52-141401560e75 lookup          1    5  messages     get_user_details(amelia_davis_8890), get_reservation_details(8C8K4E), get_reservation_details(UDMOP1), get_reservation_details(XAZ3C0), get_reservation_details(LU15PA), get_reservation_details(MSJ4OA), get_reservation_details(I6M8JQ), get_reservation_details(4XGCCM)
+t1:9799c3dd-fb74-fb65-6172-9e6b9ba0941f supervisor      1    6  messages     
+t2:4f0999d9-973a-0c8c-1187-d0f501b54be8 supervisor      2    9  messages     
+t2:08dd1134-60bf-64c4-a027-ecd6c8a2c3cc booking         2   10  messages     cancel_reservation(8C8K4E), cancel_reservation(LU15PA), cancel_reservation(MSJ4OA)
+t2:7f8763f8-19b5-fae4-d73c-fb170480e84c supervisor      2   11  messages     
+
+## Data-flow edges  (A -> B means B could read what A wrote)
+
+supervisor@4 (turn 1)    -> lookup@5 (turn 1)        via supervisor->lookup         keys=['messages']
+lookup@5 (turn 1)        -> supervisor@6 (turn 1)    via lookup->supervisor         keys=['messages']
+lookup@5 (turn 1)        -> supervisor@9 (turn 2)    via lookup->supervisor         keys=['messages']  [cross-turn]
+supervisor@9 (turn 2)    -> booking@10 (turn 2)      via supervisor->booking        keys=['messages']
+booking@10 (turn 2)      -> supervisor@11 (turn 2)   via booking->supervisor        keys=['messages']
+lookup@5 (turn 1)        -> supervisor@11 (turn 2)   via lookup->supervisor         keys=['messages']  [cross-turn]
+
+## Cascade report derived from this graph
+
+No cascade detected
+
+Nodes executed: supervisor, lookup, booking  (7 runs)
+
+Turns: 3
+Final task: PASSED
+Utility damaged: no
+Wall time: 37.32s
