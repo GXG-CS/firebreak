@@ -111,3 +111,13 @@ def test_a_trace_without_checkpoint_facts_says_so_instead_of_guessing():
     prov = ProvenanceGraph.from_trace(trace)
     assert not prov.writes and not prov.reads
     assert prov.warnings and "checkpoint_fact" in prov.warnings[0]
+
+
+def test_the_two_framework_keys_the_debug_stream_drops_are_captured():
+    """`langgraph_path` and `langgraph_checkpoint_ns` only reach us through the callbacks."""
+    result, prov = _prov()
+    extras = [e.payload["langgraph"] for e in result.trace.events if "langgraph" in e.payload]
+    assert extras, "callback events must carry the framework extras"
+    assert any("checkpoint_ns" in x for x in extras)
+    assert any("path" in x for x in extras)
+    assert any(run.checkpoint_ns is not None for run in prov.tasks.values())

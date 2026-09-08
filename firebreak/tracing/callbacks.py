@@ -26,9 +26,24 @@ class FirebreakTracer(BaseCallbackHandler):
     # ---- helpers -------------------------------------------------------------------
     @staticmethod
     def _ctx(metadata: dict | None) -> tuple:
+        """(node, step, triggers, framework_extras).
+
+        LangGraph stamps five keys on every run started inside a node (`pregel/_algo.py`):
+        `langgraph_node`, `langgraph_step`, `langgraph_triggers`, `langgraph_path` and
+        `langgraph_checkpoint_ns`. The debug stream deliberately drops the last two as
+        "redundant" (`pregel/debug.py`), so the callback path is the only place they can be
+        captured. `checkpoint_ns` identifies the subgraph a task ran in; `path` distinguishes a
+        normally scheduled task from one created by a `Send`.
+        """
         md = metadata or {}
         triggers = md.get("langgraph_triggers") or []
-        return md.get("langgraph_node"), md.get("langgraph_step"), [str(t) for t in triggers]
+        extras: dict[str, Any] = {}
+        path = md.get("langgraph_path")
+        if path is not None:
+            extras["path"] = [str(part) for part in path] if isinstance(path, (list, tuple)) else str(path)
+        if md.get("langgraph_checkpoint_ns") is not None:
+            extras["checkpoint_ns"] = str(md["langgraph_checkpoint_ns"])
+        return md.get("langgraph_node"), md.get("langgraph_step"), [str(t) for t in triggers], extras
 
     def _remember(self, run_id: Any, name: str, metadata: dict | None) -> None:
         self._names[str(run_id)] = name
@@ -38,7 +53,9 @@ class FirebreakTracer(BaseCallbackHandler):
         return self._names.get(str(run_id), ""), self._ctx_by_run.get(str(run_id))
 
     def _emit(self, kind: str, name: str, run_id: Any, parent_run_id: Any, ctx: tuple | None, payload: dict) -> Event:
-        node, step, triggers = ctx if ctx else (None, None, [])
+        node, step, triggers, extras = ctx if ctx else (None, None, [], {})
+        if extras:
+            payload = {**payload, "langgraph": extras}
         return self.trace.add(
             Event(
                 kind=kind,
