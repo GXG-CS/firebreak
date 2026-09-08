@@ -270,6 +270,14 @@ def record(
         error = repr(exc)
         trace.add(Event("run_error", payload={"error": safe(exc)}))
         trace.meta["run_error"] = error
+    # Copy LangGraph's own checkpoint records into the trace, so the provenance of this run can
+    # be rebuilt offline from facts rather than re-inferred from ordering. Imported here because
+    # the provenance package reads the trace types defined in this module.
+    from firebreak.provenance.capture import snapshot_checkpoints
+
+    added = snapshot_checkpoints(graph, cfg, trace)
+    trace.meta["checkpoint_facts"] = int(trace.meta.get("checkpoint_facts", 0)) + added
+
     finished = time.time()
     trace.meta["finished"] = finished
     trace.meta.setdefault("invokes", []).append(

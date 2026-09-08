@@ -57,7 +57,7 @@ team. Point `--model openai` at any OpenAI-compatible endpoint (vLLM, Ollama, Op
 | Capability | What it means |
 |---|---|
 | **Capture** | Records every LangGraph node start/end, state write, trigger, tool call, and model call of a run into a JSONL trace |
-| **Represent** | Rebuilds the real execution graph: which node run consumed which node run's writes |
+| **Represent** | Rebuilds the data path from LangGraph's checkpoint records: which task wrote which channel version, and which task was handed it |
 | **Inject** | Injects tool errors, bad tool output, corrupted messages, bad node output, and timeouts at a chosen call |
 | **Trace** | Follows a fault forward through the dependency graph to every node, state key, and tool call it reached |
 | **Report** | Prints source, propagation path, affected nodes, blast radius, detection delay, and final task outcome |
@@ -81,6 +81,26 @@ python -m firebreak.integrations.tau2_airline.runner --task 39 --model fake \
 
 With a local Qwen2.5-14B behind `--model openai` the clean run passes the task and the faulted run
 fails it; see `docs/FIRST_CASCADE.md` for the full traces.
+
+## Provenance from LangGraph's own records
+
+The dependency graph is not guessed. LangGraph writes down which task wrote which channel
+(`pending_writes`), the version that produced (`channel_versions`), and what each task was handed
+(`task.input`). Firebreak copies those records into the trace and rebuilds the data path from them:
+
+```
+lookup@5  --WRITE-->  messages:v7  --READ-->  supervisor@6
+```
+
+with the state version kept as its own node, so two tasks writing the same version stay two
+producers instead of one being picked as the cause. `docs/PROVENANCE.md` states where every
+relation comes from and what the model cannot express yet.
+
+```bash
+python scripts/dump_provenance.py docs/traces/tau2_task39_qwen14b_clean.jsonl
+```
+
+The same command audits the older static-edge heuristic against the recorded relations.
 
 ## Evaluation from day one
 

@@ -1,0 +1,56 @@
+# Legacy heuristic edges audited against observed provenance
+
+The legacy graph connects A -> B when the compiled graph declares a static edge A -> B
+and A's run finished before B's started. That is an inference over ordering. Below, each
+of its edges is checked against relations LangGraph actually recorded.
+
+  legacy edges: 6   supported 4   accumulated 2   ambiguous 0   unsupported 0
+  observed task-to-task relations: 37   of which missing from the legacy graph: 31
+
+  legacy edge                                              verdict      carried by
+  supervisor@4 (turn 1) -> lookup@5 (turn 1)               supported    messages:00000000000000000000000000000006.0.5477137591138078
+  lookup@5 (turn 1) -> supervisor@6 (turn 1)               supported    messages:00000000000000000000000000000007.0.6833534802304403
+  lookup@5 (turn 1) -> supervisor@9 (turn 2)               accumulated  messages:00000000000000000000000000000007.0.6833534802304403
+  supervisor@9 (turn 2) -> booking@10 (turn 2)             supported    messages:00000000000000000000000000000011.0.6055532446229288
+  booking@10 (turn 2) -> supervisor@11 (turn 2)            supported    messages:00000000000000000000000000000012.0.3944669605392932
+  lookup@5 (turn 1) -> supervisor@11 (turn 2)              accumulated  messages:00000000000000000000000000000007.0.6833534802304403
+
+## Observed relations the legacy graph has no edge for
+
+  __input__@-1 -> lookup@5 (turn 1)                        accumulated  carried by messages:00000000000000000000000000000002.0.37193707099491347
+  __input__@-1 -> supervisor@1 (turn 0)                    direct       carried by messages:00000000000000000000000000000002.0.37193707099491347
+  __input__@-1 -> supervisor@11 (turn 2)                   accumulated  carried by messages:00000000000000000000000000000002.0.37193707099491347
+  __input__@-1 -> supervisor@6 (turn 1)                    accumulated  carried by messages:00000000000000000000000000000002.0.37193707099491347
+  __input__@-1 -> supervisor@9 (turn 2)                    accumulated  carried by messages:00000000000000000000000000000002.0.37193707099491347
+  __input__@-1 -> booking@10 (turn 2)                      accumulated  carried by messages:00000000000000000000000000000002.0.37193707099491347
+  __input__@-1 -> supervisor@4 (turn 1)                    accumulated  carried by messages:00000000000000000000000000000002.0.37193707099491347
+  lookup@5 (turn 1) -> booking@10 (turn 2)                 accumulated  carried by messages:00000000000000000000000000000007.0.6833534802304403
+  supervisor@1 (turn 0) -> lookup@5 (turn 1)               accumulated  carried by messages:00000000000000000000000000000003.0.5020628821054135
+  supervisor@1 (turn 0) -> supervisor@11 (turn 2)          accumulated  carried by messages:00000000000000000000000000000003.0.5020628821054135
+  supervisor@1 (turn 0) -> supervisor@6 (turn 1)           accumulated  carried by messages:00000000000000000000000000000003.0.5020628821054135
+  supervisor@1 (turn 0) -> supervisor@9 (turn 2)           accumulated  carried by messages:00000000000000000000000000000003.0.5020628821054135
+  supervisor@1 (turn 0) -> booking@10 (turn 2)             accumulated  carried by messages:00000000000000000000000000000003.0.5020628821054135
+  supervisor@1 (turn 0) -> supervisor@4 (turn 1)           accumulated  carried by messages:00000000000000000000000000000003.0.5020628821054135
+  __input__@2 -> lookup@5 (turn 1)                         accumulated  carried by messages:00000000000000000000000000000005.0.19153459507142312
+  __input__@2 -> supervisor@11 (turn 2)                    accumulated  carried by messages:00000000000000000000000000000005.0.19153459507142312
+  __input__@2 -> supervisor@6 (turn 1)                     accumulated  carried by messages:00000000000000000000000000000005.0.19153459507142312
+  __input__@2 -> supervisor@9 (turn 2)                     accumulated  carried by messages:00000000000000000000000000000005.0.19153459507142312
+  __input__@2 -> booking@10 (turn 2)                       accumulated  carried by messages:00000000000000000000000000000005.0.19153459507142312
+  __input__@2 -> supervisor@4 (turn 1)                     direct       carried by messages:00000000000000000000000000000005.0.19153459507142312
+  __input__@7 -> supervisor@11 (turn 2)                    accumulated  carried by messages:00000000000000000000000000000010.0.7286383286696818
+  __input__@7 -> supervisor@9 (turn 2)                     direct       carried by messages:00000000000000000000000000000010.0.7286383286696818
+  __input__@7 -> booking@10 (turn 2)                       accumulated  carried by messages:00000000000000000000000000000010.0.7286383286696818
+  supervisor@6 (turn 1) -> supervisor@11 (turn 2)          accumulated  carried by messages:00000000000000000000000000000008.0.6354862579178078
+  supervisor@6 (turn 1) -> supervisor@9 (turn 2)           accumulated  carried by messages:00000000000000000000000000000008.0.6354862579178078
+  supervisor@6 (turn 1) -> booking@10 (turn 2)             accumulated  carried by messages:00000000000000000000000000000008.0.6354862579178078
+  supervisor@9 (turn 2) -> supervisor@11 (turn 2)          accumulated  carried by messages:00000000000000000000000000000011.0.6055532446229288
+  supervisor@4 (turn 1) -> supervisor@11 (turn 2)          accumulated  carried by messages:00000000000000000000000000000006.0.5477137591138078
+  supervisor@4 (turn 1) -> supervisor@6 (turn 1)           accumulated  carried by messages:00000000000000000000000000000006.0.5477137591138078
+  supervisor@4 (turn 1) -> supervisor@9 (turn 2)           accumulated  carried by messages:00000000000000000000000000000006.0.5477137591138078
+  supervisor@4 (turn 1) -> booking@10 (turn 2)             accumulated  carried by messages:00000000000000000000000000000006.0.5477137591138078
+
+supported   = the consumer directly read a version this producer wrote
+accumulated = the consumer read a later version of an accumulating channel that this
+              producer's version was folded into (recorded via the channel class, not guessed)
+ambiguous   = the node pair appears, but not this pair of runs
+unsupported = no observed relation between these nodes at all

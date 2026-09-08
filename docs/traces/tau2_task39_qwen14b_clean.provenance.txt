@@ -1,0 +1,249 @@
+# Observed state provenance — tau2_task39_qwen14b_clean.jsonl
+
+Every relation below is a field LangGraph itself recorded. Nothing is inferred from
+wall-clock time, from the static graph, or by a model.
+
+episode tau2-39-7344ca  thread tau2-39-7344ca
+task 39  model openai  outcome PASSED  faults none
+
+10 task runs, 17 state versions, 17 WRITE relations, 7 READ relations, 7 TRIGGER relations, 13 checkpoints
+channels: branch:to:booking, branch:to:lookup, branch:to:supervisor, messages
+channel classes: branch:to:booking=EphemeralValue, branch:to:lookup=EphemeralValue, branch:to:supervisor=EphemeralValue, messages=BinaryOperatorAggregate
+accumulating (a new version contains the previous one): __pregel_tasks, messages  -> 9 DERIVED relations
+
+Two kinds of read, kept apart because LangGraph records them differently:
+  READ     the version was in the state handed to the task
+           (checkpoint.channel_versions of the checkpoint it was scheduled from,
+            intersected with the channels its own recorded input carried)
+  TRIGGER  the version is what caused the task to be scheduled
+           (checkpoint.versions_seen; in a StateGraph this is the routing channel,
+            not the channel the data travelled on)
+
+## Checkpoints  (the record the provenance is read from)
+
+  checkpoint_id                             step source   writes  updated_channels
+  1f1ab2de-0bca-6127-bfff-25c8a65b1c72        -1 input         2  __start__
+  1f1ab2de-0bcb-6d74-8000-07697f412969         0 loop          1  branch:to:supervisor, messages
+  1f1ab2de-18f1-6ea9-8001-4d90372c68ee         1 loop          0  messages
+  1f1ab2de-1db5-6556-8002-1fb3023e44d5         2 input         2  __start__
+  1f1ab2de-1db7-6a3e-8003-8906c496294a         3 loop          2  branch:to:supervisor, messages
+  1f1ab2de-2b61-637b-8004-ef4c1cfad401         4 loop          2  branch:to:lookup, messages
+  1f1ab2de-b44d-6fe0-8005-7b43382bc9c4         5 loop          1  branch:to:supervisor, messages
+  1f1ab2de-caeb-6150-8006-907a3bb7bcdb         6 loop          0  messages
+  1f1ab2de-d8ed-64cd-8007-621852a40260         7 input         2  __start__
+  1f1ab2de-d8ef-66ac-8008-9e66407d126b         8 loop          2  branch:to:supervisor, messages
+  1f1ab2de-f495-6622-8009-3697c8ff6245         9 loop          2  branch:to:booking, messages
+  1f1ab2df-72f1-6c45-800a-b75c47fde3e9        10 loop          1  branch:to:supervisor, messages
+  1f1ab2df-86aa-6dd2-800b-62f02bb5f126        11 loop          0  messages
+
+## Task runs
+
+  label                      task_id                                  turn  step  triggers
+  __input__@-1               14695816-d3cd-94f2-a9c0-7dababc99990     None    -1  -
+  supervisor@1 (turn 0)      4ef5249f-8699-797f-59ee-9d8aab4bf948        0     1  branch:to:supervisor
+  __input__@2                846c25bb-bc9b-0136-125d-c9725384327e     None     2  -
+  supervisor@4 (turn 1)      c6e8e82e-b30f-80fc-20fb-4a1d7bf28bbd        1     4  branch:to:supervisor
+  lookup@5 (turn 1)          21b1c343-c40e-cbd7-c4ef-b21c1130d7fc        1     5  branch:to:lookup
+  supervisor@6 (turn 1)      a99009f0-fc9e-e870-a3a5-178d270e1eb2        1     6  branch:to:supervisor
+  __input__@7                8f988a86-54fd-e3ef-18fb-fefd7768c308     None     7  -
+  supervisor@9 (turn 2)      b69a6ad6-2abf-f2ac-bfa4-9d07ec5c95d7        2     9  branch:to:supervisor
+  booking@10 (turn 2)        bc25b9c0-e8cc-b0b4-eb61-f28f05be295d        2    10  branch:to:booking
+  supervisor@11 (turn 2)     a56f2640-107e-e77b-4a25-4514556b5b32        2    11  branch:to:supervisor
+
+## Provenance, per state version
+
+  TaskRun --WRITE--> StateVersion --READ--> TaskRun
+
+STATE branch:to:supervisor:00000000000000000000000000000002.0.37193707099491347
+  born in checkpoint 1f1ab2de-0bcb-6d74-8000-07697f412969  step 0
+  WRITTEN BY
+    __input__@-1               task_id=14695816-d3cd-94f2-a9c0-7dababc99990
+      evidence: checkpoint.pending_writes  checkpoint=1f1ab2de-0bca-6127-bfff-25c8a65b1c72  step=-1  channel=branch:to:supervisor  value_sha1=2be88ca4242c
+  READ BY  (no task received this version)
+  TRIGGERED
+    supervisor@1 (turn 0)
+      evidence: checkpoint.versions_seen  checkpoint=1f1ab2de-18f1-6ea9-8001-4d90372c68ee  step=1  node=supervisor  channel=branch:to:supervisor  version=00000000000000000000000000000002.0.37193707099491347
+
+STATE messages:00000000000000000000000000000002.0.37193707099491347
+  born in checkpoint 1f1ab2de-0bcb-6d74-8000-07697f412969  step 0
+  WRITTEN BY
+    __input__@-1               task_id=14695816-d3cd-94f2-a9c0-7dababc99990
+      evidence: checkpoint.pending_writes  checkpoint=1f1ab2de-0bca-6127-bfff-25c8a65b1c72  step=-1  channel=messages  value_sha1=df1b6b2f4ca4
+  READ BY
+    supervisor@1 (turn 0)
+      evidence: checkpoint.channel_versions + task.input  checkpoint=1f1ab2de-0bcb-6d74-8000-07697f412969  step=0  node=supervisor  channel=messages  version=00000000000000000000000000000002.0.37193707099491347
+      note: the version this channel held in the checkpoint the task was scheduled from; the channel is one the task's recorded input carried
+
+STATE messages:00000000000000000000000000000003.0.5020628821054135
+  born in checkpoint 1f1ab2de-18f1-6ea9-8001-4d90372c68ee  step 1
+  accumulated onto v2.3719   [channel class BinaryOperatorAggregate]
+  WRITTEN BY
+    supervisor@1 (turn 0)      task_id=4ef5249f-8699-797f-59ee-9d8aab4bf948
+      evidence: checkpoint.pending_writes  checkpoint=1f1ab2de-0bcb-6d74-8000-07697f412969  step=0  channel=messages  value_sha1=877dfce506d8
+  READ BY  (no task received this version)
+
+STATE branch:to:supervisor:00000000000000000000000000000005.0.19153459507142312
+  born in checkpoint 1f1ab2de-1db7-6a3e-8003-8906c496294a  step 3
+  WRITTEN BY
+    __input__@2                task_id=846c25bb-bc9b-0136-125d-c9725384327e
+      evidence: checkpoint.pending_writes  checkpoint=1f1ab2de-1db5-6556-8002-1fb3023e44d5  step=2  channel=branch:to:supervisor  value_sha1=2be88ca4242c
+  READ BY  (no task received this version)
+  TRIGGERED
+    supervisor@4 (turn 1)
+      evidence: checkpoint.versions_seen  checkpoint=1f1ab2de-2b61-637b-8004-ef4c1cfad401  step=4  node=supervisor  channel=branch:to:supervisor  version=00000000000000000000000000000005.0.19153459507142312
+
+STATE messages:00000000000000000000000000000005.0.19153459507142312
+  born in checkpoint 1f1ab2de-1db7-6a3e-8003-8906c496294a  step 3
+  accumulated onto v3.5020 (and 1 earlier)   [channel class BinaryOperatorAggregate]
+  WRITTEN BY
+    __input__@2                task_id=846c25bb-bc9b-0136-125d-c9725384327e
+      evidence: checkpoint.pending_writes  checkpoint=1f1ab2de-1db5-6556-8002-1fb3023e44d5  step=2  channel=messages  value_sha1=9022d4236eba
+  READ BY
+    supervisor@4 (turn 1)
+      evidence: checkpoint.channel_versions + task.input  checkpoint=1f1ab2de-1db7-6a3e-8003-8906c496294a  step=3  node=supervisor  channel=messages  version=00000000000000000000000000000005.0.19153459507142312
+      note: the version this channel held in the checkpoint the task was scheduled from; the channel is one the task's recorded input carried
+
+STATE branch:to:lookup:00000000000000000000000000000006.0.5477137591138078
+  born in checkpoint 1f1ab2de-2b61-637b-8004-ef4c1cfad401  step 4
+  WRITTEN BY
+    supervisor@4 (turn 1)      task_id=c6e8e82e-b30f-80fc-20fb-4a1d7bf28bbd
+      evidence: checkpoint.pending_writes  checkpoint=1f1ab2de-1db7-6a3e-8003-8906c496294a  step=3  channel=branch:to:lookup  value_sha1=2be88ca4242c
+  READ BY  (no task received this version)
+  TRIGGERED
+    lookup@5 (turn 1)
+      evidence: checkpoint.versions_seen  checkpoint=1f1ab2de-b44d-6fe0-8005-7b43382bc9c4  step=5  node=lookup  channel=branch:to:lookup  version=00000000000000000000000000000006.0.5477137591138078
+
+STATE messages:00000000000000000000000000000006.0.5477137591138078
+  born in checkpoint 1f1ab2de-2b61-637b-8004-ef4c1cfad401  step 4
+  accumulated onto v5.1915 (and 2 earlier)   [channel class BinaryOperatorAggregate]
+  WRITTEN BY
+    supervisor@4 (turn 1)      task_id=c6e8e82e-b30f-80fc-20fb-4a1d7bf28bbd
+      evidence: checkpoint.pending_writes  checkpoint=1f1ab2de-1db7-6a3e-8003-8906c496294a  step=3  channel=messages  value_sha1=59d9a0771eae
+  READ BY
+    lookup@5 (turn 1)
+      evidence: checkpoint.channel_versions + task.input  checkpoint=1f1ab2de-2b61-637b-8004-ef4c1cfad401  step=4  node=lookup  channel=messages  version=00000000000000000000000000000006.0.5477137591138078
+      note: the version this channel held in the checkpoint the task was scheduled from; the channel is one the task's recorded input carried
+
+STATE branch:to:supervisor:00000000000000000000000000000007.0.6833534802304403
+  born in checkpoint 1f1ab2de-b44d-6fe0-8005-7b43382bc9c4  step 5
+  WRITTEN BY
+    lookup@5 (turn 1)          task_id=21b1c343-c40e-cbd7-c4ef-b21c1130d7fc
+      evidence: checkpoint.pending_writes  checkpoint=1f1ab2de-2b61-637b-8004-ef4c1cfad401  step=4  channel=branch:to:supervisor  value_sha1=2be88ca4242c
+  READ BY  (no task received this version)
+  TRIGGERED
+    supervisor@6 (turn 1)
+      evidence: checkpoint.versions_seen  checkpoint=1f1ab2de-caeb-6150-8006-907a3bb7bcdb  step=6  node=supervisor  channel=branch:to:supervisor  version=00000000000000000000000000000007.0.6833534802304403
+
+STATE messages:00000000000000000000000000000007.0.6833534802304403
+  born in checkpoint 1f1ab2de-b44d-6fe0-8005-7b43382bc9c4  step 5
+  accumulated onto v6.5477 (and 3 earlier)   [channel class BinaryOperatorAggregate]
+  WRITTEN BY
+    lookup@5 (turn 1)          task_id=21b1c343-c40e-cbd7-c4ef-b21c1130d7fc
+      evidence: checkpoint.pending_writes  checkpoint=1f1ab2de-2b61-637b-8004-ef4c1cfad401  step=4  channel=messages  value_sha1=d6b3e0ddc8a6
+  READ BY
+    supervisor@6 (turn 1)
+      evidence: checkpoint.channel_versions + task.input  checkpoint=1f1ab2de-b44d-6fe0-8005-7b43382bc9c4  step=5  node=supervisor  channel=messages  version=00000000000000000000000000000007.0.6833534802304403
+      note: the version this channel held in the checkpoint the task was scheduled from; the channel is one the task's recorded input carried
+
+STATE messages:00000000000000000000000000000008.0.6354862579178078
+  born in checkpoint 1f1ab2de-caeb-6150-8006-907a3bb7bcdb  step 6
+  accumulated onto v7.6833 (and 4 earlier)   [channel class BinaryOperatorAggregate]
+  WRITTEN BY
+    supervisor@6 (turn 1)      task_id=a99009f0-fc9e-e870-a3a5-178d270e1eb2
+      evidence: checkpoint.pending_writes  checkpoint=1f1ab2de-b44d-6fe0-8005-7b43382bc9c4  step=5  channel=messages  value_sha1=b46c6ff573c4
+  READ BY  (no task received this version)
+
+STATE branch:to:supervisor:00000000000000000000000000000010.0.7286383286696818
+  born in checkpoint 1f1ab2de-d8ef-66ac-8008-9e66407d126b  step 8
+  WRITTEN BY
+    __input__@7                task_id=8f988a86-54fd-e3ef-18fb-fefd7768c308
+      evidence: checkpoint.pending_writes  checkpoint=1f1ab2de-d8ed-64cd-8007-621852a40260  step=7  channel=branch:to:supervisor  value_sha1=2be88ca4242c
+  READ BY  (no task received this version)
+  TRIGGERED
+    supervisor@9 (turn 2)
+      evidence: checkpoint.versions_seen  checkpoint=1f1ab2de-f495-6622-8009-3697c8ff6245  step=9  node=supervisor  channel=branch:to:supervisor  version=00000000000000000000000000000010.0.7286383286696818
+
+STATE messages:00000000000000000000000000000010.0.7286383286696818
+  born in checkpoint 1f1ab2de-d8ef-66ac-8008-9e66407d126b  step 8
+  accumulated onto v8.6354 (and 5 earlier)   [channel class BinaryOperatorAggregate]
+  WRITTEN BY
+    __input__@7                task_id=8f988a86-54fd-e3ef-18fb-fefd7768c308
+      evidence: checkpoint.pending_writes  checkpoint=1f1ab2de-d8ed-64cd-8007-621852a40260  step=7  channel=messages  value_sha1=3a9a2328fa1d
+  READ BY
+    supervisor@9 (turn 2)
+      evidence: checkpoint.channel_versions + task.input  checkpoint=1f1ab2de-d8ef-66ac-8008-9e66407d126b  step=8  node=supervisor  channel=messages  version=00000000000000000000000000000010.0.7286383286696818
+      note: the version this channel held in the checkpoint the task was scheduled from; the channel is one the task's recorded input carried
+
+STATE branch:to:booking:00000000000000000000000000000011.0.6055532446229288
+  born in checkpoint 1f1ab2de-f495-6622-8009-3697c8ff6245  step 9
+  WRITTEN BY
+    supervisor@9 (turn 2)      task_id=b69a6ad6-2abf-f2ac-bfa4-9d07ec5c95d7
+      evidence: checkpoint.pending_writes  checkpoint=1f1ab2de-d8ef-66ac-8008-9e66407d126b  step=8  channel=branch:to:booking  value_sha1=2be88ca4242c
+  READ BY  (no task received this version)
+  TRIGGERED
+    booking@10 (turn 2)
+      evidence: checkpoint.versions_seen  checkpoint=1f1ab2df-72f1-6c45-800a-b75c47fde3e9  step=10  node=booking  channel=branch:to:booking  version=00000000000000000000000000000011.0.6055532446229288
+
+STATE messages:00000000000000000000000000000011.0.6055532446229288
+  born in checkpoint 1f1ab2de-f495-6622-8009-3697c8ff6245  step 9
+  accumulated onto v10.7286 (and 6 earlier)   [channel class BinaryOperatorAggregate]
+  WRITTEN BY
+    supervisor@9 (turn 2)      task_id=b69a6ad6-2abf-f2ac-bfa4-9d07ec5c95d7
+      evidence: checkpoint.pending_writes  checkpoint=1f1ab2de-d8ef-66ac-8008-9e66407d126b  step=8  channel=messages  value_sha1=9d02c766f6c2
+  READ BY
+    booking@10 (turn 2)
+      evidence: checkpoint.channel_versions + task.input  checkpoint=1f1ab2de-f495-6622-8009-3697c8ff6245  step=9  node=booking  channel=messages  version=00000000000000000000000000000011.0.6055532446229288
+      note: the version this channel held in the checkpoint the task was scheduled from; the channel is one the task's recorded input carried
+
+STATE branch:to:supervisor:00000000000000000000000000000012.0.3944669605392932
+  born in checkpoint 1f1ab2df-72f1-6c45-800a-b75c47fde3e9  step 10
+  WRITTEN BY
+    booking@10 (turn 2)        task_id=bc25b9c0-e8cc-b0b4-eb61-f28f05be295d
+      evidence: checkpoint.pending_writes  checkpoint=1f1ab2de-f495-6622-8009-3697c8ff6245  step=9  channel=branch:to:supervisor  value_sha1=2be88ca4242c
+  READ BY  (no task received this version)
+  TRIGGERED
+    supervisor@11 (turn 2)
+      evidence: checkpoint.versions_seen  checkpoint=1f1ab2df-86aa-6dd2-800b-62f02bb5f126  step=11  node=supervisor  channel=branch:to:supervisor  version=00000000000000000000000000000012.0.3944669605392932
+
+STATE messages:00000000000000000000000000000012.0.3944669605392932
+  born in checkpoint 1f1ab2df-72f1-6c45-800a-b75c47fde3e9  step 10
+  accumulated onto v11.6055 (and 7 earlier)   [channel class BinaryOperatorAggregate]
+  WRITTEN BY
+    booking@10 (turn 2)        task_id=bc25b9c0-e8cc-b0b4-eb61-f28f05be295d
+      evidence: checkpoint.pending_writes  checkpoint=1f1ab2de-f495-6622-8009-3697c8ff6245  step=9  channel=messages  value_sha1=0da7dce5e320
+  READ BY
+    supervisor@11 (turn 2)
+      evidence: checkpoint.channel_versions + task.input  checkpoint=1f1ab2df-72f1-6c45-800a-b75c47fde3e9  step=10  node=supervisor  channel=messages  version=00000000000000000000000000000012.0.3944669605392932
+      note: the version this channel held in the checkpoint the task was scheduled from; the channel is one the task's recorded input carried
+
+STATE messages:00000000000000000000000000000013.0.2114378662662333
+  born in checkpoint 1f1ab2df-86aa-6dd2-800b-62f02bb5f126  step 11
+  accumulated onto v12.3944 (and 8 earlier)   [channel class BinaryOperatorAggregate]
+  WRITTEN BY
+    supervisor@11 (turn 2)     task_id=a56f2640-107e-e77b-4a25-4514556b5b32
+      evidence: checkpoint.pending_writes  checkpoint=1f1ab2df-72f1-6c45-800a-b75c47fde3e9  step=10  channel=messages  value_sha1=d1273686bb02
+  READ BY  (no task received this version)
+
+## The data path, one line each  (READ relations only)
+
+  __input__@-1               --messages:v2.3719      --> supervisor@1 (turn 0)
+  __input__@2                --messages:v5.1915      --> supervisor@4 (turn 1)
+  supervisor@4 (turn 1)      --messages:v6.5477      --> lookup@5 (turn 1)
+  lookup@5 (turn 1)          --messages:v7.6833      --> supervisor@6 (turn 1)
+  __input__@7                --messages:v10.7286     --> supervisor@9 (turn 2)
+  supervisor@9 (turn 2)      --messages:v11.6055     --> booking@10 (turn 2)
+  booking@10 (turn 2)        --messages:v12.3944     --> supervisor@11 (turn 2)
+
+## What this cannot say yet
+
+  * The TRIGGER relation is not the data path. LangGraph only stamps `versions_seen`
+    for a task's trigger channels, which in a StateGraph are the routing channels, so
+    the channel carrying the data never appears there.
+  * Provenance is per channel, not per message. With one `messages` channel and an
+    add_messages reducer every task reads and writes the same channel, so a relation
+    means "this task read the state version that included that task's write", not
+    "this task read that message".
+  * A relation is a data path, not a cause. Nothing here claims the consumer used what
+    the producer wrote, only that it was in the state it consumed.
+  * Reads are attributed to a task by the super-step it ran in. A node that advanced its
+    seen version without writing anything is recorded with the node name and no task id.
