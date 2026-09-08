@@ -1,7 +1,7 @@
 """Record LangGraph runs into an ordered, serialisable Trace.
 
-A Trace can hold one ``graph.invoke`` (the research_team example) or a whole episode of
-invocations on one thread (one per user turn, the tau2 integration).  Every event is
+A Trace can hold one ``graph.invoke`` or a whole episode of invocations on one thread, one
+per recorded turn.  Every event is
 stamped with ``episode_id`` / ``turn`` / ``invoke_id``; ``seq`` keeps increasing.
 """
 

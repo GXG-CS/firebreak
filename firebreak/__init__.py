@@ -1,30 +1,28 @@
-"""Firebreak: stop cascading failures in LangGraph multi-agent systems."""
+"""Firebreak: capture a LangGraph run and rebuild its structure from LangGraph's own records.
 
-from firebreak.detection.signals import Signal, detect, source_of
-from firebreak.graph.execution import ExecutionGraph
-from firebreak.graph.propagation import Propagation, propagate
+    LangGraph runtime -> Capture -> Trace -> EpisodeGraph -> TurnGraph -> TaskRun -> Event
+"""
+
+from firebreak.episode.graph import CrossTurnLink, EpisodeGraph, TurnGraph, TurnSummary
 from firebreak.injection.faults import DEFAULT_MARKER, Fault, FaultPlan
-from firebreak.reporting.report import CascadeReport, build_report
-from firebreak.runner import App, analyze, run_app
+from firebreak.provenance.graph import ProvenanceGraph, StateVersion, TaskRunRef
+from firebreak.tracing.grouping import group_by_task_run
 from firebreak.tracing.recorder import Trace, record
 
-__version__ = "0.1.0.dev0"
+__version__ = "0.2.0.dev0"
 
 __all__ = [
     "DEFAULT_MARKER",
-    "App",
-    "CascadeReport",
-    "ExecutionGraph",
+    "CrossTurnLink",
+    "EpisodeGraph",
     "Fault",
     "FaultPlan",
-    "Propagation",
-    "Signal",
+    "ProvenanceGraph",
+    "StateVersion",
+    "TaskRunRef",
     "Trace",
-    "analyze",
-    "build_report",
-    "detect",
-    "propagate",
+    "TurnGraph",
+    "TurnSummary",
+    "group_by_task_run",
     "record",
-    "run_app",
-    "source_of",
 ]

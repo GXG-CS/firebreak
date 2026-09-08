@@ -1,19 +1,19 @@
 # Roadmap
 
-## Now: Capture and Reconstruction
+## Now: Capture, and the episode / turn structure over it
 
 The whole current scope is making one LangGraph run into provenance that can be checked line by
 line:
 
 ```
-LangGraph runtime -> Capture -> Trace -> Reconstruction -> .provenance.json / .provenance.txt
+LangGraph runtime -> Capture -> Trace -> EpisodeGraph -> TurnGraph -> TaskRun -> Event
 ```
 
 Done:
 
 * Capture from all three runtime sources (debug/tasks stream, callbacks, checkpointer), at episode
   level, into a single offline `.jsonl`.
-* Reconstruction into `TaskRun -> StateVersion -> TaskRun` with evidence on every relation.
+* Evidence as `TaskRun -> StateVersion -> TaskRun`, with the field each relation came from.
 * Observed and derived evidence kept apart; derivations checked against recorded element
   identities rather than assumed from the channel class.
 * Task identity taken from the trace, not from who happened to write.
@@ -40,8 +40,11 @@ Open, in the order they matter:
 * **Other capture surfaces.** Other frameworks, and reading traces produced by OpenTelemetry or
   Langfuse instrumentation.
 
-## Later, and currently frozen
+## Later
 
-Detection, propagation, cascade reporting, fault injection, containment. The code is in the tree
-and still tested; none of it is being developed. Nothing should be built on the provenance layer
-until the provenance layer is understood.
+Detection, propagation, containment. Nothing should be built on this layer until the layer itself
+is understood, so none of it is being developed. The earlier attempt — an execution graph inferred
+from the static topology plus execution ordering, with cascade detection and reporting on it — was
+removed from the tree once the recorded evidence made the inference unnecessary; it is in the git
+history. Controlled fault injection stays, because that is how a capture with a known bad value
+gets made.

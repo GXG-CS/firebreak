@@ -27,9 +27,7 @@ PY
 cd "$REPO"
 echo "=== ruff ==="; ruff check firebreak tests eval examples --exclude firebreak/integrations/tau2_airline/vendor | tail -5
 echo "=== pytest ==="; pytest -q -x --no-header -p no:cacheprovider 2>&1 | tail -40
-echo "=== CLI: research_team clean ==="; firebreak run examples/multi_agent/research_team.py 2>&1 | tail -12
-echo "=== CLI: research_team tool_error ==="; firebreak run examples/multi_agent/research_team.py --inject tool_error:search_web 2>&1 | tail -30
-echo "=== tau2 task 39 clean (fake) ==="; python -m firebreak.integrations.tau2_airline.runner --task 39 --model fake 2>&1 | tail -25
-echo "=== tau2 task 39 lookup corruption (fake) ==="; python -m firebreak.integrations.tau2_airline.runner --task 39 --model fake --inject message_corruption:lookup:1:swap_first_eligible_reservation --out slurm/logs/tau2_cascade_fake_$SLURM_JOB_ID.jsonl 2>&1 | tail -45
-echo "=== benchmarks ==="; python -m eval.run 2>&1 | tail -25
+echo "=== tau2 task 39 (fake), capture only ==="; python -m firebreak.integrations.tau2_airline.runner --task 39 --model fake --out slurm/logs/capture_$SLURM_JOB_ID.jsonl 2>&1 | tail -20
+echo "=== episode / turn structure ==="; python scripts/dump_episode.py slurm/logs/capture_$SLURM_JOB_ID.jsonl --quiet
+echo "=== evidence ==="; python scripts/dump_provenance.py slurm/logs/capture_$SLURM_JOB_ID.jsonl --quiet
 echo "DONE"

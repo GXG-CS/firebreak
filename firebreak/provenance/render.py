@@ -1,17 +1,12 @@
-"""Human-readable and machine-readable dumps of a ProvenanceGraph, plus a legacy audit."""
+"""Human-readable and machine-readable dumps of the evidence: every relation and its source."""
 
 from __future__ import annotations
 
 import json
 from typing import Any
 
-from firebreak.graph.execution import ExecutionGraph
 from firebreak.provenance.graph import ProvenanceGraph
 
-SUPPORTED = "supported"
-ACCUMULATED = "accumulated"
-AMBIGUOUS = "ambiguous"
-UNSUPPORTED = "unsupported"
 
 
 def render_json(prov: ProvenanceGraph, trace: Any = None) -> str:
@@ -199,111 +194,4 @@ def render_text(prov: ProvenanceGraph, trace: Any = None, source_name: str = "")
     add("  * A task that wrote nothing is placed on its checkpoint by step alignment, using an")
     add("    offset calibrated on the tasks that did write. That is weaker than a task id match,")
     add("    and the task table says which placement each task got.")
-    return "\n".join(out) + "\n"
-
-
-def compare_with_legacy(prov: ProvenanceGraph, legacy: ExecutionGraph) -> dict:
-    """LEGACY AUDIT. Check the old static-edge + ordering heuristic against the observed provenance.
-
-    Used only by `dump_provenance.py --legacy-audit`. Not part of the current path.
-
-    The provenance side is the substrate; the heuristic is only the thing being audited. Nothing
-    here changes either graph.
-    """
-    observed = prov.observed_task_relations()
-    by_pair: dict[tuple, list] = {}
-    direct_pairs: set = set()
-    for pair in observed:
-        if pair["consumer_task_id"]:
-            key = (pair["producer_task_id"], pair["consumer_task_id"])
-            by_pair.setdefault(key, []).append(pair)
-            if pair.get("relation") == "direct":
-                direct_pairs.add(key)
-    by_node_pair: dict[tuple, list] = {}
-    for pair in observed:
-        by_node_pair.setdefault((pair["producer"].split(" ")[0], str(pair["consumer"]).split(" ")[0]), []).append(pair)
-
-    legacy_rows = []
-    for edge in legacy.edges:
-        src, dst = legacy.get(edge.src), legacy.get(edge.dst)
-        if src is None or dst is None:
-            continue
-        src_task, dst_task = _strip(src.id), _strip(dst.id)
-        exact = by_pair.get((src_task, dst_task))
-        if exact:
-            verdict = SUPPORTED if (src_task, dst_task) in direct_pairs else ACCUMULATED
-            states = sorted({p["via"] for p in exact})
-        else:
-            loose = by_node_pair.get((src.label.split(" ")[0], dst.label.split(" ")[0]))
-            verdict = AMBIGUOUS if loose else UNSUPPORTED
-            states = sorted({p["state"] for p in loose}) if loose else []
-        legacy_rows.append(
-            {"edge": f"{src.label} -> {dst.label}", "verdict": verdict, "states": states}
-        )
-
-    legacy_pairs = {(_strip(legacy.get(e.src).id), _strip(legacy.get(e.dst).id))
-                    for e in legacy.edges if legacy.get(e.src) and legacy.get(e.dst)}
-    missed = []
-    for (producer, consumer), pairs in sorted(by_pair.items()):
-        if (producer, consumer) in legacy_pairs:
-            continue
-        missed.append(
-            {
-                "relation": f"{prov.task_label(producer)} -> {prov.task_label(consumer)}",
-                "states": sorted({p["via"] for p in pairs}),
-                "kind": "direct" if (producer, consumer) in direct_pairs else "accumulated",
-            }
-        )
-    return {
-        "legacy_edges": legacy_rows,
-        "observed_not_in_legacy": missed,
-        "counts": {
-            "legacy_edges": len(legacy_rows),
-            "supported": sum(1 for r in legacy_rows if r["verdict"] == SUPPORTED),
-            "accumulated": sum(1 for r in legacy_rows if r["verdict"] == ACCUMULATED),
-            "ambiguous": sum(1 for r in legacy_rows if r["verdict"] == AMBIGUOUS),
-            "unsupported": sum(1 for r in legacy_rows if r["verdict"] == UNSUPPORTED),
-            "observed_relations": len(by_pair),
-            "observed_not_in_legacy": len(missed),
-        },
-    }
-
-
-def _strip(run_id: str) -> str:
-    """ExecutionGraph run ids are `<invoke_id>:<task_id>`; provenance keys on the task id."""
-    return run_id.split(":", 1)[1] if ":" in run_id else run_id
-
-
-def render_comparison(comparison: dict) -> str:
-    out: list[str] = []
-    add = out.append
-    add("# Legacy heuristic edges audited against observed provenance")
-    add("")
-    add("The legacy graph connects A -> B when the compiled graph declares a static edge A -> B")
-    add("and A's run finished before B's started. That is an inference over ordering. Below, each")
-    add("of its edges is checked against relations LangGraph actually recorded.")
-    add("")
-    counts = comparison["counts"]
-    add(f"  legacy edges: {counts['legacy_edges']}   supported {counts['supported']}   "
-        f"accumulated {counts.get('accumulated', 0)}   ambiguous {counts['ambiguous']}   "
-        f"unsupported {counts['unsupported']}")
-    add(f"  observed task-to-task relations: {counts['observed_relations']}   "
-        f"of which missing from the legacy graph: {counts['observed_not_in_legacy']}")
-    add("")
-    add(f"  {'legacy edge':<56} {'verdict':<12} carried by")
-    for row in comparison["legacy_edges"]:
-        add(f"  {row['edge']:<56} {row['verdict']:<12} {', '.join(row['states']) or '-'}")
-    add("")
-    add("## Observed relations the legacy graph has no edge for")
-    add("")
-    if not comparison["observed_not_in_legacy"]:
-        add("  (none)")
-    for row in comparison["observed_not_in_legacy"]:
-        add(f"  {row['relation']:<56} {row['kind']:<12} carried by {', '.join(row['states'])}")
-    add("")
-    add("supported   = the consumer directly read a version this producer wrote")
-    add("accumulated = the consumer read a later version of an accumulating channel that this")
-    add("              producer's version was folded into (recorded via the channel class, not guessed)")
-    add("ambiguous   = the node pair appears, but not this pair of runs")
-    add("unsupported = no observed relation between these nodes at all")
     return "\n".join(out) + "\n"

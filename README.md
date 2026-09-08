@@ -18,20 +18,30 @@ LangGraph runtime
    └─ checkpointer              channel versions, versions seen, per-task writes, lineage
          │
          ▼
-      Capture                   firebreak/tracing/  -> one Trace, a .jsonl file
+      Capture                   firebreak/tracing/   -> one Trace, a .jsonl file
          │
          ▼
-   Reconstruction               firebreak/provenance/  -> ProvenanceGraph
+   EpisodeGraph                 firebreak/episode/   -> .episode.md
+     ├── TurnGraph 0
+     ├── TurnGraph 1            each turn: its TaskRuns, its StateVersions, its relations
+     └── TurnGraph 2
          │
          ▼
-   .provenance.json / .provenance.txt
+   later: detection
 ```
 
-The stream, the callbacks and the checkpointer are LangGraph's and LangChain's own runtime
-sources. Capture persists what they report into a trace that can be analysed offline, with no
-service and no re-run. Reconstruction turns that trace into provenance.
+Underneath the structure, `firebreak/provenance/` holds the evidence: every relation and the field
+it came from.
 
-## What the provenance says
+The stream, the callbacks and the checkpointer are LangGraph's and LangChain's own runtime
+sources. Capture persists what they report into a trace that can be read offline, with no service
+and no re-run. The episode layer projects that trace into structure.
+
+A turn is a Firebreak-assigned analysis unit stamped when the run is recorded — by convention one
+external interaction per `record()`, though nothing enforces it. `step` is LangGraph's thread-wide
+super-step counter, so a turn's steps do not start at zero and one step can run several tasks.
+
+## What the evidence says
 
 Not `task -> task`, but the state artifact in the middle, so two tasks writing the same version
 stay two producers instead of one being picked as the cause:
@@ -110,14 +120,15 @@ docs/
   traces/        the canonical example
 ```
 
-Everything else in the tree (`firebreak/graph/`, `detection/`, `injection/`, `reporting/`,
-`integrations/`) is earlier experimental work: an execution graph built from the static topology
-plus execution ordering, fault injection, and cascade reporting on top of it. It still runs and is
-still tested, but it is not the current line and it is not what the provenance layer uses.
+`firebreak/injection/` applies controlled faults to a run, which is how a capture containing a
+known bad value gets made. `firebreak/integrations/tau2_airline/` is the environment the canonical
+capture comes from: a Supervisor + Lookup + Booking team on τ²-bench airline, with a real database
+and an objective evaluator.
 
 ## Status
 
-Pre-alpha. Current scope is Capture and Reconstruction only.
+Pre-alpha. Current scope is Capture and the episode / turn structure over it. Detection comes
+after that, and only once the structure is understood.
 
 ## License
 

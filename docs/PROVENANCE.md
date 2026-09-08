@@ -91,7 +91,7 @@ values are already in the `node_end` writes.
 python scripts/dump_provenance.py <trace>.jsonl
 ```
 
-writes `<trace>.provenance.json`, `<trace>.provenance.txt` and `<trace>.legacy_audit.txt`.
+writes `<trace>.provenance.json`, `<trace>.provenance.txt` and `<trace>.provenance.md`.
 
 ## What it cannot say
 
@@ -108,9 +108,11 @@ writes `<trace>.provenance.json`, `<trace>.provenance.txt` and `<trace>.legacy_a
 * **Element identity is not content.** A message replaced under the same id passes the containment
   check, because only identities are compared. Content-level retention is not claimed.
 
-## The heuristic this replaces
+## Where this sits
 
-`ExecutionGraph._build_edges` links `A -> B` when the compiled graph declares a static edge
-`A.name -> B.name` and `A`'s run finished before `B`'s started. It is kept as a legacy baseline for
-the audit and is still what detection and reporting use. `scripts/dump_provenance.py` writes the
-audit that checks each of its edges against the recorded relations.
+This layer is the evidence. The structure over it — `EpisodeGraph -> TurnGraph -> TaskRun -> Event`
+— is a projection in `firebreak/episode/`, which slices these relations by turn and keeps the ones
+that cross a turn boundary at the boundary rather than dropping them. See `ARCHITECTURE.md`.
+
+An earlier layer inferred edges from the static topology plus execution ordering. It was removed
+once these records made the inference unnecessary; it is in the git history.

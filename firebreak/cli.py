@@ -1,13 +1,8 @@
 """Command line interface.
 
-Current:
     firebreak trace <trace.jsonl>        read a capture, source by source
-    firebreak episode <trace.jsonl>      the episode / turn hierarchy
+    firebreak episode <trace.jsonl>      the episode / turn structure
     firebreak provenance <trace.jsonl>   the relation-level evidence underneath it
-
-Legacy (the earlier cascade work, kept and still tested, not the current line):
-    firebreak run <example.py>
-    firebreak report <trace.jsonl>
 """
 
 from __future__ import annotations
@@ -16,34 +11,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from firebreak.injection.faults import FaultPlan
-from firebreak.runner import analyze, load_example, run_app
 from firebreak.tracing.recorder import Trace
-
-
-def _cmd_run(args: argparse.Namespace) -> int:
-    module = load_example(args.example)
-    plan = FaultPlan.parse(args.inject)
-    app = module.build(model=args.model, plan=plan)
-    analysis = run_app(app, plan, save=args.out)
-    if args.json:
-        print(analysis.report.to_json(indent=2))
-    else:
-        print(analysis.report.render())
-        if args.out:
-            print(f"\nTrace saved to {args.out}")
-    if args.graph:
-        print("\nExecution graph")
-        print(analysis.graph.to_dict())
-    return 0
-
-
-def _cmd_report(args: argparse.Namespace) -> int:
-    trace = Trace.from_jsonl(args.trace)
-    outcome = str(trace.meta.get("outcome", "UNKNOWN"))
-    analysis = analyze(trace, outcome)
-    print(analysis.report.to_json(indent=2) if args.json else analysis.report.render())
-    return 0
 
 
 def _cmd_trace(args: argparse.Namespace) -> int:
@@ -62,20 +30,6 @@ def _cmd_trace(args: argparse.Namespace) -> int:
     return 0
 
 
-def _cmd_provenance(args: argparse.Namespace) -> int:
-    """Reconstruction: rebuild the provenance of a saved capture and write it beside the trace."""
-    from scripts.dump_provenance import dump  # noqa: PLC0415 - the script owns the output layout
-
-    for written in [dump(Path(args.trace), legacy_audit=args.legacy_audit)]:
-        print(f"{args.trace}  ->  {', '.join(w.name for w in written)}")
-        if not args.quiet:
-            for out in written:
-                if out.suffix in (".txt", ".md"):
-                    print()
-                    print(out.read_text())
-    return 0
-
-
 def _cmd_episode(args: argparse.Namespace) -> int:
     """Project a capture into the episode / turn hierarchy."""
     from scripts.dump_episode import dump  # noqa: PLC0415 - the script owns the output layout
@@ -88,10 +42,24 @@ def _cmd_episode(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_provenance(args: argparse.Namespace) -> int:
+    """The evidence underneath the structure: WRITE, READ, TRIGGER, DERIVED_FROM."""
+    from scripts.dump_provenance import dump  # noqa: PLC0415 - the script owns the output layout
+
+    written = dump(Path(args.trace))
+    print(f"{args.trace}  ->  {', '.join(w.name for w in written)}")
+    if not args.quiet:
+        for out in written:
+            if out.suffix in (".txt", ".md"):
+                print()
+                print(out.read_text())
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="firebreak",
-        description="Capture a LangGraph run and rebuild its provenance from LangGraph's own records.",
+        description="Capture a LangGraph run and rebuild its structure from LangGraph's own records.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -101,31 +69,16 @@ def build_parser() -> argparse.ArgumentParser:
     trace.add_argument("--no-checkpoints", action="store_true", help="omit the checkpointer ledger")
     trace.set_defaults(func=_cmd_trace)
 
-    ep = sub.add_parser("episode", help="project a capture into the episode / turn hierarchy (.episode.md)")
-    ep.add_argument("trace", help="path to a JSONL trace")
-    ep.add_argument("--json", action="store_true", help="also write <trace>.episode.json")
-    ep.add_argument("--quiet", action="store_true", help="write the files without printing them")
-    ep.set_defaults(func=_cmd_episode)
+    episode = sub.add_parser("episode", help="the episode / turn hierarchy (.episode.md)")
+    episode.add_argument("trace", help="path to a JSONL trace")
+    episode.add_argument("--json", action="store_true", help="also write <trace>.episode.json")
+    episode.add_argument("--quiet", action="store_true", help="write the files without printing them")
+    episode.set_defaults(func=_cmd_episode)
 
-    prov = sub.add_parser("provenance", help="rebuild the relation-level evidence (.provenance.json / .txt / .md)")
+    prov = sub.add_parser("provenance", help="the relation-level evidence (.provenance.json / .txt / .md)")
     prov.add_argument("trace", help="path to a JSONL trace")
     prov.add_argument("--quiet", action="store_true", help="write the files without printing them")
-    prov.add_argument("--legacy-audit", action="store_true", help="also check the legacy execution graph against the recorded relations")
     prov.set_defaults(func=_cmd_provenance)
-
-    run = sub.add_parser("run", help="LEGACY: run an example graph with injected faults and report the cascade")
-    run.add_argument("example", help="path to an example module exposing build(model, plan)")
-    run.add_argument("--inject", action="append", default=[], metavar="SPEC", help="fault spec kind:target[:on_call[:payload]]; repeatable")
-    run.add_argument("--model", default="fake", help="model backend understood by the example (default: fake)")
-    run.add_argument("--out", default=None, help="save the trace as JSONL")
-    run.add_argument("--json", action="store_true", help="print the report as JSON")
-    run.add_argument("--graph", action="store_true", help="also print the reconstructed execution graph")
-    run.set_defaults(func=_cmd_run)
-
-    rep = sub.add_parser("report", help="LEGACY: re-analyse a saved trace with the cascade reporter")
-    rep.add_argument("trace", help="path to a JSONL trace written by `firebreak run --out`")
-    rep.add_argument("--json", action="store_true")
-    rep.set_defaults(func=_cmd_report)
     return parser
 
 

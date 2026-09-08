@@ -1,10 +1,9 @@
 """Provenance must be grounded: every relation traceable to a field LangGraph recorded."""
 
-from firebreak.graph.execution import ExecutionGraph
 from firebreak.integrations.tau2_airline.runner import run_episode
 from firebreak.provenance.capture import CHECKPOINT_FACT
 from firebreak.provenance.graph import ProvenanceGraph
-from firebreak.provenance.render import compare_with_legacy, render_comparison, render_json, render_text
+from firebreak.provenance.render import render_json, render_text
 from firebreak.tracing.recorder import Trace
 
 TASK = "39"
@@ -79,19 +78,6 @@ def test_derivation_only_for_accumulating_channels():
     assert prov.channel_types["branch:to:lookup"] == "EphemeralValue"
     assert "messages" in prov.accumulating and "branch:to:lookup" not in prov.accumulating
     assert prov.derived and all(prov.states[d.state_key].channel in prov.accumulating for d in prov.derived)
-
-
-def test_legacy_audit_finds_the_edge_with_no_direct_evidence():
-    result, prov = _prov()
-    legacy = ExecutionGraph.from_trace(result.trace)
-    comparison = compare_with_legacy(prov, legacy)
-    verdicts = {row["edge"]: row["verdict"] for row in comparison["legacy_edges"]}
-    # the heuristic links the latest lookup run to every later supervisor run; only the first is direct
-    assert verdicts["lookup@2 (turn 0) -> supervisor@3 (turn 0)"] == "supported"
-    assert verdicts["lookup@2 (turn 0) -> supervisor@5 (turn 0)"] == "accumulated"
-    assert comparison["counts"]["unsupported"] == 0
-    assert comparison["counts"]["observed_not_in_legacy"] > 0, "provenance sees relations the heuristic misses"
-    assert "legacy edge" in render_comparison(comparison)
 
 
 def test_dumps_round_trip_through_a_saved_trace(tmp_path):

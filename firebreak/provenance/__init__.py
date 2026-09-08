@@ -20,12 +20,7 @@ from firebreak.provenance.mermaid import (
     render_markdown,
     state_lineage,
 )
-from firebreak.provenance.render import (
-    compare_with_legacy,
-    render_comparison,
-    render_json,
-    render_text,
-)
+from firebreak.provenance.render import render_json, render_text
 
 __all__ = [
     "CHECKPOINT_FACT",
@@ -35,10 +30,8 @@ __all__ = [
     "StateVersion",
     "TaskRunRef",
     "WriteRelation",
-    "compare_with_legacy",
     "control_flow",
     "data_flow",
-    "render_comparison",
     "render_markdown",
     "state_lineage",
     "render_json",

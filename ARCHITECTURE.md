@@ -33,7 +33,7 @@ debug/tasks    callbacks     checkpointer
                   ▼
                 Trace          an ordered list of Events + run metadata, one .jsonl file
                   ▼
-   firebreak/provenance/  (Reconstruction)
+   firebreak/provenance/  (evidence)
        capture.py    snapshot_checkpoints(): checkpoint records -> `checkpoint_fact` events
        graph.py      ProvenanceGraph: TaskRun -> StateVersion -> TaskRun, every relation with evidence
        render.py     .provenance.json and .provenance.txt
@@ -71,7 +71,7 @@ per step would make the trace grow quadratically.
 A trace can hold one invoke or a whole episode of them on one thread. Every event carries
 `episode_id`, `turn`, `invoke_id` and a globally increasing `seq`.
 
-## Reconstruction
+## Evidence
 
 ## Structure
 
@@ -89,10 +89,12 @@ to carry another turn's contents.
 `DERIVED_FROM` relations. Task identity comes from the trace; `pending_writes` proves where a task
 ran, not whether it ran. See `docs/PROVENANCE.md` for the grounding of each relation.
 
-## Not the current line
+## Supporting packages
 
-`firebreak/graph/` holds an earlier `ExecutionGraph` that links `A -> B` when the compiled graph
-declares a static edge and `A` finished before `B` started. That is an inference over ordering, and
-it is what the provenance layer replaces. It is retained because `detection/`, `reporting/` and
-`runner.py` still use it. `injection/` and `integrations/` are the fault-injection and cascade work
-built on top of it. All of it still runs and is still tested; none of it is the current focus.
+`firebreak/injection/` applies controlled faults so a capture can contain a known bad value: fault
+specs, wrappers for tools and node functions, and a record of exactly what each injection changed.
+`firebreak/integrations/tau2_airline/` is the environment the canonical capture comes from.
+
+An earlier line — an execution graph inferred from the static topology plus execution ordering,
+with cascade detection and reporting on top of it — was removed once the recorded evidence made the
+inference unnecessary. It is in the git history.

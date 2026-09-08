@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "langgraph-firebreak"
-version = "0.1.0.dev0"
-description = "Stop cascading failures in LangGraph multi-agent systems."
+version = "0.2.0.dev0"
+description = "Capture a LangGraph run and rebuild its structure from LangGraph's own records."
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.11"
 authors = [{ name = "Firebreak contributors" }]
-keywords = ["langgraph", "multi-agent", "reliability", "fault-injection", "observability", "agents"]
+keywords = ["langgraph", "multi-agent", "provenance", "observability", "tracing", "agents"]
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",
   "Intended Audience :: Developers",

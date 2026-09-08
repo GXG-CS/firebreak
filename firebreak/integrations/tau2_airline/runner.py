@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from firebreak.injection.faults import FaultPlan
+from firebreak.episode.graph import EpisodeGraph
 from firebreak.integrations.tau2_airline.mas import (
     SENSITIVE_TOOLS,
     TRANSFORMS,
@@ -33,7 +34,6 @@ from firebreak.integrations.tau2_airline.vendor.evaluation import (
     score_tau2_episode,
 )
 from firebreak.integrations.tau2_airline.vendor.user_sim import UserSimulator
-from firebreak.runner import Analysis, analyze
 from firebreak.tracing.recorder import Trace
 
 DEFAULT_MAX_TURNS = 30
@@ -79,14 +79,14 @@ class EpisodeResult:
     transcript: list = field(default_factory=list)
     tool_calls: list = field(default_factory=list)
     trace: Trace | None = None
-    analysis: Analysis | None = None
+    episode: EpisodeGraph | None = None
 
     @property
     def outcome(self) -> str:
         return "PASSED" if self.success else "FAILED"
 
     def summary(self) -> dict:
-        report = self.analysis.report if self.analysis else None
+        episode = self.episode
         return {
             "task_id": self.task_id,
             "model": self.model,
@@ -99,14 +99,10 @@ class EpisodeResult:
             "turns": self.turns,
             "terminated_by": self.terminated_by,
             "tool_calls": [{"name": c["name"], "args": c["args"], "error": c["error"]} for c in self.tool_calls],
-            "cascade": None if report is None else {
-                "detected": report.detected,
-                "source": (report.source or {}).get("location"),
-                "path": report.path,
-                "reached": report.reached,
-                "harmful_actions": report.harmful_actions,
-                "blast_radius": report.blast_radius,
-                "utility_damaged": report.utility_damaged,
+            "episode": None if episode is None else {
+                "episode_id": episode.episode_id,
+                "turns": [s.to_dict() for s in episode.turns],
+                "cross_turn_links": [link.to_dict() for link in episode.cross_turn_links()],
             },
         }
 
@@ -165,7 +161,6 @@ def run_episode(
     user_model: str | None = None,
     save: str | None = None,
     marker: str = "",
-    oracle: bool = True,
 ) -> EpisodeResult:
     env = load_environment(task_id)
     plan = FaultPlan.parse(inject or [], marker=marker)
@@ -210,7 +205,7 @@ def run_episode(
     trace.meta.update({"task_id": task_id, "model": model, "outcome": outcome, "faults": [f.spec for f in plan.faults], "reward": reward.reward})
     if save:
         trace.to_jsonl(save)
-    analysis = analyze(trace, outcome, injected=list(plan.log), marker=marker or None, oracle=oracle, sensitive_tools=SENSITIVE_TOOLS)
+    episode = EpisodeGraph.from_trace(trace)
     return EpisodeResult(
         task_id=task_id,
         model=model,
@@ -225,7 +220,7 @@ def run_episode(
         transcript=[{"role": m.role, "content": m.content} for m in transcript],
         tool_calls=[{"name": e.name, "args": e.args, "error": e.error} for e in env.tool_log],
         trace=trace,
-        analysis=analysis,
+        episode=episode,
     )
 
 
@@ -251,7 +246,13 @@ def main(argv: list[str] | None = None) -> int:
     if ineffective:
         print(f"note: injections {ineffective} were applied but changed nothing (transform found nothing to swap)")
     print()
-    print(result.analysis.report.render())
+    episode = result.episode
+    if episode is not None:
+        print(f"episode {episode.episode_id}: {len(episode.turns)} turns, "
+              f"{len(episode.cross_turn_links())} relations crossing a turn boundary")
+        for summary in episode.turns:
+            print(f"  turn {summary.turn}: {summary.agent_task_runs} agent task runs "
+                  f"({', '.join(summary.nodes)}), task steps {summary.task_steps}")
     if args.out:
         print(f"\nTrace saved to {args.out}")
     return 0
