@@ -19,7 +19,13 @@ Done:
 * Task identity taken from the trace, not from who happened to write.
 * An explicit hierarchy over the evidence: `EpisodeGraph -> TurnGraph -> TaskRun -> Event`, with
   turn-local slicing and cross-turn relations preserved at the boundary.
-* Task-run grouping by recorded identity, correct when a super-step fans out.
+* Task-run grouping by recorded identity, correct when a super-step fans out, including the
+  same node running several times in one super-step via `Send`.
+
+Supported but not yet integration-validated: `write`, `read` and `trigger` relations crossing a
+turn boundary. Only `derived_from` has been observed crossing, because every invoke begins by
+writing its input, so a task always reads a version produced in its own turn. An
+`interrupt` / `Command(resume=...)` run is the case expected to produce the others.
 
 Open, in the order they matter:
 

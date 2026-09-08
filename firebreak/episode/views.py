@@ -16,6 +16,15 @@ ARROW = {"read": "-->|READ|", "write": "-->|WRITE|", "trigger": "-.->|TRIGGER|",
          "derived_from": "-. DERIVED .->"}
 
 
+def _steps(steps: list) -> str:
+    """Spell the steps out while the list is short, so a gap is visible rather than hidden."""
+    if not steps:
+        return "-"
+    if len(steps) <= 8:
+        return ", ".join(str(s) for s in steps)
+    return f"{steps[0]}–{steps[-1]} ({len(steps)})"
+
+
 def _turn_id(turn: Optional[int]) -> str:
     return "turn_" + _safe(turn)
 
@@ -40,7 +49,7 @@ def episode_diagram(episode: EpisodeGraph) -> str:
     """
     lines = ["flowchart LR"]
     for summary in episode.turns:
-        steps = f"steps {summary.first_step}–{summary.last_step}" if summary.steps else "no steps"
+        steps = f"steps {summary.first_step}–{summary.last_step}" if summary.task_steps else "no steps"
         detail = (f"{summary.agent_task_runs} agent tasks · {steps}<br/>"
                   f"{summary.event_count} events · {summary.checkpoints} checkpoints")
         lines.append(f'  {_turn_id(summary.turn)}["<b>turn {summary.turn}</b><br/>{detail}"]')
@@ -165,6 +174,10 @@ def render_episode_markdown(episode: EpisodeGraph, source_name: str = "") -> str
     out.append("              └── Event")
     out.append("```")
     out.append("")
+    out.append("`task steps` are the super-steps that ran a task; `all steps` are every super-step "
+               "the turn checkpointed, which is wider because a super-step can checkpoint without "
+               "running a task.")
+    out.append("")
     out.append("A turn is a Firebreak-assigned analysis unit, stamped by whoever recorded the run. "
                "By convention one external interaction is recorded as one turn, but nothing enforces "
                "that. `step` is LangGraph's super-step counter for the whole thread, so a turn's "
@@ -173,12 +186,12 @@ def render_episode_markdown(episode: EpisodeGraph, source_name: str = "") -> str
 
     out.append("## Episode")
     out.append("")
-    out.append("| turn | invokes | steps | agent tasks | events | checkpoints | wall time |")
-    out.append("|---|---|---|---|---|---|---|")
+    out.append("| turn | invokes | task steps | all steps | agent tasks | events | checkpoints | wall time |")
+    out.append("|---|---|---|---|---|---|---|---|")
     for summary in episode.turns:
-        steps = f"{summary.first_step}–{summary.last_step}" if summary.steps else "-"
         wall = f"{summary.wall_time:.1f}s" if summary.wall_time else "-"
-        out.append(f"| {summary.turn} | {len(summary.invoke_ids)} | {steps} | "
+        out.append(f"| {summary.turn} | {len(summary.invoke_ids)} | "
+                   f"{_steps(summary.task_steps)} | {_steps(summary.checkpoint_steps)} | "
                    f"{summary.agent_task_runs} | {summary.event_count} | {summary.checkpoints} | {wall} |")
     out.append("")
     links = episode.cross_turn_links()

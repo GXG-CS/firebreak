@@ -13,6 +13,7 @@ from langchain_core.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
+from langgraph.types import Send
 
 from firebreak.episode.graph import CrossTurnLink, EpisodeGraph, is_internal
 from firebreak.episode.views import episode_diagram, render_episode_markdown, turn_diagram
@@ -72,6 +73,45 @@ def _fan_out_graph():
     return builder.compile(checkpointer=InMemorySaver())
 
 
+class SendState(TypedDict):
+    item: str
+    messages: Annotated[list, add_messages]
+
+
+def _send_fan_out_graph():
+    """`Send` runs the SAME node several times in one super-step, with different task ids.
+
+    This is the case `(node, step)` cannot separate, so it is the real test of attributing an event
+    by the task id LangGraph encodes in the checkpoint namespace.
+    """
+
+    def dispatch(state: SendState) -> list:
+        return [Send("worker", {"item": "a"}), Send("worker", {"item": "b"})]
+
+    def start(state: SendState) -> dict:
+        return {"messages": [AIMessage(content="dispatching", id="s1")]}
+
+    def worker(state: SendState, config) -> dict:
+        item = state["item"]
+        note.invoke({"text": item}, config=config)
+        return {"messages": [AIMessage(content=f"worker {item}", id=f"w_{item}")]}
+
+    builder = StateGraph(SendState)
+    builder.add_node("start_node", start)
+    builder.add_node("worker", worker)
+    builder.add_edge(START, "start_node")
+    builder.add_conditional_edges("start_node", dispatch, ["worker"])
+    builder.add_edge("worker", END)
+    return builder.compile(checkpointer=InMemorySaver())
+
+
+def _send_trace() -> Trace:
+    trace = Trace()
+    record(_send_fan_out_graph(), {"item": "", "messages": [HumanMessage(content="go", id="h1")]},
+           trace=trace, thread_id="send", turn=0)
+    return trace
+
+
 def _fan_out_trace() -> Trace:
     trace = Trace()
     record(_fan_out_graph(), {"messages": [HumanMessage(content="go", id="h1")]},
@@ -82,11 +122,13 @@ def _fan_out_trace() -> Trace:
 # ---- grouping ---------------------------------------------------------------------------------
 
 def test_task_id_is_parsed_from_the_checkpoint_namespace():
-    assert task_id_from_checkpoint_ns("supervisor:abc-123") == "abc-123"
-    assert task_id_from_checkpoint_ns("parent|child:def-456") == "def-456"
-    assert task_id_from_checkpoint_ns("") is None
-    assert task_id_from_checkpoint_ns(None) is None
-    assert task_id_from_checkpoint_ns("no-separator") is None
+    """LangGraph encodes `{parent}|{node}:{task_id}`; anything else must be declined, not guessed."""
+    uuid_a = "0123abcd-4567-89ab-cdef-0123456789ab"
+    uuid_b = "fedcba98-7654-3210-fedc-ba9876543210"
+    assert task_id_from_checkpoint_ns(f"supervisor:{uuid_a}") == uuid_a
+    assert task_id_from_checkpoint_ns(f"parent|child:{uuid_b}") == uuid_b
+    for unrecognised in ("", None, "no-separator", "supervisor:abc-123", "supervisor:", ":only"):
+        assert task_id_from_checkpoint_ns(unrecognised) is None, unrecognised
 
 
 def test_parallel_task_runs_in_one_step_keep_their_own_events():
@@ -108,6 +150,63 @@ def test_parallel_task_runs_in_one_step_keep_their_own_events():
         assert len(tools) == 1, f"{run.node} lost its tool event to the other parallel run"
         assert tools[0].payload["input"]["text"] == expected
     assert not any(e.kind.startswith("tool") for e in grouped.unattached)
+
+
+def test_the_same_node_twice_in_one_step_is_separated_by_recorded_task_id():
+    """Two `worker` task runs in one super-step: `(node, step)` cannot tell them apart."""
+    trace = _send_trace()
+    grouped = group_by_task_run(trace)
+    workers = [run for run in grouped.runs if run.node == "worker"]
+
+    assert len(workers) == 2, f"Send must produce two worker task runs, got {[r.node for r in grouped.runs]}"
+    assert workers[0].step == workers[1].step, "both must be in the same super-step"
+    assert workers[0].task_id != workers[1].task_id
+    assert not grouped.warnings, f"attribution must be exact, not a fallback: {grouped.warnings}"
+    assert {r.identity for r in workers} <= {"task_id", "checkpoint_ns"}
+
+    # each worker keeps its own tool call; a (node, step) key would have merged them
+    seen = set()
+    for run in workers:
+        tools = run.of_kind("tool_start")
+        assert len(tools) == 1, f"a worker lost its tool event: {[e.kind for e in run.events]}"
+        seen.add(tools[0].payload["input"]["text"])
+    assert seen == {"a", "b"}
+
+
+def test_at_least_one_worker_is_attributed_purely_by_the_checkpoint_namespace():
+    """The callbacks carry no task id of their own, only the namespace it is encoded in."""
+    trace = _send_trace()
+    callback_events = [e for e in trace.events
+                       if e.kind in ("tool_start", "chain_start") and e.node == "worker"]
+    assert callback_events, "the fixture must produce callback events inside the repeated node"
+    assert all(e.task_id is None for e in callback_events), (
+        "callback events carry no task_id; if they ever do, this test is no longer testing the parser"
+    )
+    resolved = {task_id_from_checkpoint_ns((e.payload.get("langgraph") or {}).get("checkpoint_ns"))
+                for e in callback_events}
+    assert len(resolved) == 2 and None not in resolved, (
+        f"the namespace must yield both worker task ids, got {resolved}"
+    )
+
+
+def test_an_unrecognised_namespace_declines_instead_of_guessing():
+    assert task_id_from_checkpoint_ns("worker:not-a-uuid") is None
+    assert task_id_from_checkpoint_ns("worker:") is None
+    assert task_id_from_checkpoint_ns("parent|worker:0123abcd-4567-89ab-cdef-0123456789ab") == (
+        "0123abcd-4567-89ab-cdef-0123456789ab"
+    )
+
+
+def test_two_runs_of_one_node_in_a_step_are_both_in_the_episode():
+    episode = EpisodeGraph.from_trace(_send_trace())
+    turn = episode.turn(0)
+    workers = [r for r in turn.agent_task_runs if r.node == "worker"]
+    assert len(workers) == 2, f"both runs of the repeated node must survive: {[r.label for r in turn.agent_task_runs]}"
+    assert workers[0].step == workers[1].step
+    assert len({r.task_id for r in workers}) == 2
+    # both wrote, and both writes are relations of this turn
+    written_by = {w.task_id for w in turn.writes}
+    assert {r.task_id for r in workers} <= written_by
 
 
 def test_a_step_with_two_task_runs_is_visible_in_the_episode():
@@ -240,7 +339,11 @@ def test_a_turn_summary_reports_only_recorded_facts():
     summary = _canonical_episode().turn(1).summary
     assert summary.invoke_ids and isinstance(summary.invoke_ids, list)
     assert summary.first_seq < summary.last_seq
-    assert summary.steps == [2, 4, 5, 6]
+    assert summary.task_steps == [2, 4, 5, 6], "only super-steps that ran a task"
+    assert summary.checkpoint_steps == [2, 3, 4, 5, 6], "every super-step the turn checkpointed"
+    assert set(summary.task_steps) < set(summary.checkpoint_steps), (
+        "a super-step can checkpoint without running a task, so the two sets differ"
+    )
     assert summary.nodes[0] == "__input__" and "lookup" in summary.nodes
     assert summary.event_count > 0 and summary.checkpoints > 0
 

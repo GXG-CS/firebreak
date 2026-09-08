@@ -19,6 +19,7 @@ group rather than hiding it.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -32,13 +33,26 @@ NS_END = ":"
 TURN_LEVEL_KINDS = {"checkpoint", "checkpoint_fact", "run_error", "injection"}
 
 
+# LangGraph builds a task namespace as `{parent}|{node}:{task_id}` with `task_id` a UUID-shaped
+# string (`pregel/_algo.py`). That encoding is internal to the framework, so the parser recognises
+# exactly that shape and declines anything else rather than attributing an event to a wrong task if
+# a future version changes the format.
+TASK_ID_RE = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+
+
 def task_id_from_checkpoint_ns(namespace: Optional[str]) -> Optional[str]:
-    """The task id LangGraph encoded in a checkpoint namespace, or None."""
+    """The task id LangGraph encoded in a checkpoint namespace, or None if unrecognised.
+
+    Returning None is safe: the caller then falls back to `(invoke, node, step)` grouping and says
+    so, rather than silently mis-attributing events.
+    """
     if not namespace:
         return None
     last = str(namespace).split(NS_SEP)[-1]
     _, separator, task_id = last.partition(NS_END)
-    return task_id or None if separator else None
+    if not separator or not task_id:
+        return None
+    return task_id if TASK_ID_RE.match(task_id) else None
 
 
 def event_task_id(event: Event) -> tuple[Optional[str], str]:
@@ -143,8 +157,9 @@ def group_by_task_run(trace) -> GroupedTrace:
 
     for key in sorted(fallbacks):
         grouped.warnings.append(
-            f"events for {key} carried neither a task id nor a checkpoint namespace, so they were "
-            "grouped by (invoke, node, step); two tasks of the same node in that step would merge"
+            f"events for {key} carried no task id and no recognisable checkpoint namespace, so they "
+            "were grouped by (invoke, node, step); two tasks of the same node in that super-step "
+            "would merge. Check whether LangGraph's namespace encoding has changed."
         )
     grouped.runs.sort(key=lambda r: r.first_seq)
     return grouped

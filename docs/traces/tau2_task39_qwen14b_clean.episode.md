@@ -10,15 +10,17 @@ EpisodeGraph
               └── Event
 ```
 
+`task steps` are the super-steps that ran a task; `all steps` are every super-step the turn checkpointed, which is wider because a super-step can checkpoint without running a task.
+
 A turn is a Firebreak-assigned analysis unit, stamped by whoever recorded the run. By convention one external interaction is recorded as one turn, but nothing enforces that. `step` is LangGraph's super-step counter for the whole thread, so a turn's steps do not start at zero and one step can hold several task runs.
 
 ## Episode
 
-| turn | invokes | steps | agent tasks | events | checkpoints | wall time |
-|---|---|---|---|---|---|---|
-| 0 | 1 | -1–1 | 1 | 14 | 3 | 1.4s |
-| 1 | 1 | 2–6 | 3 | 52 | 5 | 18.1s |
-| 2 | 1 | 7–11 | 3 | 40 | 5 | 18.2s |
+| turn | invokes | task steps | all steps | agent tasks | events | checkpoints | wall time |
+|---|---|---|---|---|---|---|---|
+| 0 | 1 | -1, 1 | -1, 0, 1 | 1 | 14 | 3 | 1.4s |
+| 1 | 1 | 2, 4, 5, 6 | 2, 3, 4, 5, 6 | 3 | 52 | 5 | 18.1s |
+| 2 | 1 | 7, 9, 10, 11 | 7, 8, 9, 10, 11 | 3 | 40 | 5 | 18.2s |
 
 The dotted `next` arrows are recording order, not causality. The 2 thick arrows are relations that actually cross a turn boundary.
 

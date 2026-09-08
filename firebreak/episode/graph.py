@@ -29,6 +29,12 @@ task runs when a super-step fans out.
 * a StateVersion belongs to the turn in which the checkpoint that first held it was captured;
 * a relation is local to a turn when both of its ends are in that turn, and becomes a
   `CrossTurnLink` otherwise. Nothing is dropped either way.
+
+Coverage note: only `derived_from` is observed crossing a turn in any capture recorded so far,
+because every invoke begins by writing its input, so a task always reads a version produced in its
+own turn. Crossing `write`, `read` and `trigger` links are supported by this projection but not yet
+integration-validated; an `interrupt` / `Command(resume=...)` run is the case expected to produce
+them.
 """
 
 from __future__ import annotations
@@ -63,9 +69,11 @@ class TurnSummary:
     invoke_ids: list = field(default_factory=list)
     first_seq: Optional[int] = None
     last_seq: Optional[int] = None
+    # `first_step` / `last_step` bound `task_steps`, not `checkpoint_steps`
     first_step: Optional[int] = None
     last_step: Optional[int] = None
-    steps: list = field(default_factory=list)
+    task_steps: list = field(default_factory=list)  # super-steps that ran at least one TaskRun
+    checkpoint_steps: list = field(default_factory=list)  # every super-step observed in this turn
     nodes: list = field(default_factory=list)
     task_runs: int = 0
     agent_task_runs: int = 0
@@ -82,7 +90,8 @@ class TurnSummary:
             "last_seq": self.last_seq,
             "first_step": self.first_step,
             "last_step": self.last_step,
-            "steps": list(self.steps),
+            "task_steps": list(self.task_steps),
+            "checkpoint_steps": list(self.checkpoint_steps),
             "nodes": list(self.nodes),
             "task_runs": self.task_runs,
             "agent_task_runs": self.agent_task_runs,
@@ -312,7 +321,9 @@ class EpisodeGraph:
 
     def _summarise(self, graph: TurnGraph, turn: Optional[int], invoke: Optional[dict]) -> TurnSummary:
         events = [e for e in self.trace.events if e.turn == turn]
-        steps = sorted({t.step for t in graph.task_runs if t.step is not None})
+        # a super-step that only produced a checkpoint runs no task, so the two are not the same set
+        task_steps = sorted({t.step for t in graph.task_runs if t.step is not None})
+        checkpoint_steps = sorted({c.get("step") for c in graph.checkpoints if c.get("step") is not None})
         nodes: list[str] = []
         for run in graph.task_runs:
             if run.node not in nodes:
@@ -336,9 +347,10 @@ class EpisodeGraph:
             invoke_ids=invoke_ids,
             first_seq=min((e.seq for e in events), default=None),
             last_seq=max((e.seq for e in events), default=None),
-            first_step=steps[0] if steps else None,
-            last_step=steps[-1] if steps else None,
-            steps=steps,
+            first_step=task_steps[0] if task_steps else None,
+            last_step=task_steps[-1] if task_steps else None,
+            task_steps=task_steps,
+            checkpoint_steps=checkpoint_steps,
             nodes=nodes,
             task_runs=len(graph.task_runs),
             agent_task_runs=len(graph.agent_task_runs),
