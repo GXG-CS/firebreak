@@ -16,7 +16,7 @@ TURN 0
 
 turn 0 · step 1 · supervisor · task f80c8b4c-eb29-9dcd-b166-f4fa5c848c8d
   langgraph   path=['__pregel_pull', 'supervisor']  checkpoint_ns=supervisor:f80c8b4c-eb29-9dcd-b166-f4fa5c848c8d
-  captured at seq 3–10
+  captured at seq 3–10  ·  grouped by task_id
 
   STREAM       node_start    supervisor                  seq 3
                  triggers   branch:to:supervisor
@@ -43,7 +43,7 @@ TURN 1
 
 turn 1 · step 4 · supervisor · task 5ab04f19-da84-0a55-42ca-169f58cb369a
   langgraph   path=['__pregel_pull', 'supervisor']  checkpoint_ns=supervisor:5ab04f19-da84-0a55-42ca-169f58cb369a
-  captured at seq 17–24
+  captured at seq 17–24  ·  grouped by task_id
 
   STREAM       node_start    supervisor                  seq 17
                  triggers   branch:to:supervisor
@@ -67,7 +67,7 @@ turn 1 · step 4 · supervisor · task 5ab04f19-da84-0a55-42ca-169f58cb369a
 
 turn 1 · step 5 · lookup · task 2a0cbb7b-e3af-43f8-925c-7f9b3bf7636c
   langgraph   path=['__pregel_pull', 'lookup']  checkpoint_ns=lookup:2a0cbb7b-e3af-43f8-925c-7f9b3bf7636c
-  captured at seq 26–51
+  captured at seq 26–51  ·  grouped by task_id
 
   STREAM       node_start    lookup                      seq 26
                  triggers   branch:to:lookup
@@ -129,7 +129,7 @@ turn 1 · step 5 · lookup · task 2a0cbb7b-e3af-43f8-925c-7f9b3bf7636c
 
 turn 1 · step 6 · supervisor · task bd54dc0f-991a-4919-e7c1-d91f4fca2044
   langgraph   path=['__pregel_pull', 'supervisor']  checkpoint_ns=supervisor:bd54dc0f-991a-4919-e7c1-d91f4fca2044
-  captured at seq 53–60
+  captured at seq 53–60  ·  grouped by task_id
 
   STREAM       node_start    supervisor                  seq 53
                  triggers   branch:to:supervisor
@@ -156,7 +156,7 @@ TURN 2
 
 turn 2 · step 9 · supervisor · task 53361bbb-60de-1ec0-3e54-2cb20c574969
   langgraph   path=['__pregel_pull', 'supervisor']  checkpoint_ns=supervisor:53361bbb-60de-1ec0-3e54-2cb20c574969
-  captured at seq 69–76
+  captured at seq 69–76  ·  grouped by task_id
 
   STREAM       node_start    supervisor                  seq 69
                  triggers   branch:to:supervisor
@@ -180,7 +180,7 @@ turn 2 · step 9 · supervisor · task 53361bbb-60de-1ec0-3e54-2cb20c574969
 
 turn 2 · step 10 · booking · task 5ce1baa6-855e-44bb-9133-be97eba7e992
   langgraph   path=['__pregel_pull', 'booking']  checkpoint_ns=booking:5ce1baa6-855e-44bb-9133-be97eba7e992
-  captured at seq 78–91
+  captured at seq 78–91  ·  grouped by task_id
 
   STREAM       node_start    booking                     seq 78
                  triggers   branch:to:booking
@@ -218,7 +218,7 @@ turn 2 · step 10 · booking · task 5ce1baa6-855e-44bb-9133-be97eba7e992
 
 turn 2 · step 11 · supervisor · task aba3c0ce-49bc-14cb-60b6-a2c5a62d8d25
   langgraph   path=['__pregel_pull', 'supervisor']  checkpoint_ns=supervisor:aba3c0ce-49bc-14cb-60b6-a2c5a62d8d25
-  captured at seq 93–100
+  captured at seq 93–100  ·  grouped by task_id
 
   STREAM       node_start    supervisor                  seq 93
                  triggers   branch:to:supervisor

@@ -1,0 +1,1497 @@
+{
+  "episode_id": "tau2-39-7e8e66",
+  "thread_id": "tau2-39-7e8e66",
+  "turns": [
+    {
+      "turn": 0,
+      "invoke_ids": [
+        "t0"
+      ],
+      "first_seq": 1,
+      "last_seq": 14,
+      "first_step": -1,
+      "last_step": 1,
+      "steps": [
+        -1,
+        1
+      ],
+      "nodes": [
+        "__input__",
+        "supervisor"
+      ],
+      "task_runs": 2,
+      "agent_task_runs": 1,
+      "event_count": 14,
+      "checkpoints": 3,
+      "wall_time": 1.3931353092193604,
+      "error": null
+    },
+    {
+      "turn": 1,
+      "invoke_ids": [
+        "t1"
+      ],
+      "first_seq": 15,
+      "last_seq": 66,
+      "first_step": 2,
+      "last_step": 6,
+      "steps": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "nodes": [
+        "__input__",
+        "supervisor",
+        "lookup"
+      ],
+      "task_runs": 4,
+      "agent_task_runs": 3,
+      "event_count": 52,
+      "checkpoints": 5,
+      "wall_time": 18.121516704559326,
+      "error": null
+    },
+    {
+      "turn": 2,
+      "invoke_ids": [
+        "t2"
+      ],
+      "first_seq": 67,
+      "last_seq": 106,
+      "first_step": 7,
+      "last_step": 11,
+      "steps": [
+        7,
+        9,
+        10,
+        11
+      ],
+      "nodes": [
+        "__input__",
+        "supervisor",
+        "booking"
+      ],
+      "task_runs": 4,
+      "agent_task_runs": 3,
+      "event_count": 40,
+      "checkpoints": 5,
+      "wall_time": 18.184603214263916,
+      "error": null
+    }
+  ],
+  "chronological_order": [
+    [
+      0,
+      1
+    ],
+    [
+      1,
+      2
+    ]
+  ],
+  "cross_turn_links": [
+    {
+      "kind": "derived_from",
+      "from_turn": 0,
+      "to_turn": 1,
+      "state": "messages:00000000000000000000000000000005.0.4251445223825404",
+      "from_state": "messages:00000000000000000000000000000003.0.7368290366656945",
+      "task_ids": [],
+      "node": null,
+      "evidence": {
+        "source": "element ids recorded per version",
+        "checkpoint_id": "1f1ab311-2196-6e3a-8003-8ce35a02028a",
+        "step": 3,
+        "channel": "messages",
+        "version": "00000000000000000000000000000005.0.4251445223825404",
+        "note": "channel class BinaryOperatorAggregate; all 2 element ids of the earlier version are present in this one"
+      },
+      "verdict": "verified"
+    },
+    {
+      "kind": "derived_from",
+      "from_turn": 1,
+      "to_turn": 2,
+      "state": "messages:00000000000000000000000000000010.0.00017371187496229012",
+      "from_state": "messages:00000000000000000000000000000008.0.652857166073468",
+      "task_ids": [],
+      "node": null,
+      "evidence": {
+        "source": "element ids recorded per version",
+        "checkpoint_id": "1f1ab311-dc7a-6e35-8008-fc6b27144ed3",
+        "step": 8,
+        "channel": "messages",
+        "version": "00000000000000000000000000000010.0.00017371187496229012",
+        "note": "channel class BinaryOperatorAggregate; all 6 element ids of the earlier version are present in this one"
+      },
+      "verdict": "verified"
+    }
+  ],
+  "warnings": [],
+  "turn_graphs": [
+    {
+      "turn": 0,
+      "summary": {
+        "turn": 0,
+        "invoke_ids": [
+          "t0"
+        ],
+        "first_seq": 1,
+        "last_seq": 14,
+        "first_step": -1,
+        "last_step": 1,
+        "steps": [
+          -1,
+          1
+        ],
+        "nodes": [
+          "__input__",
+          "supervisor"
+        ],
+        "task_runs": 2,
+        "agent_task_runs": 1,
+        "event_count": 14,
+        "checkpoints": 3,
+        "wall_time": 1.3931353092193604,
+        "error": null
+      },
+      "task_runs": [
+        {
+          "task_id": "069afb78-c334-0254-dcb0-96cccd5abc8b",
+          "node": "__input__",
+          "step": -1,
+          "turn": 0,
+          "invoke_id": null,
+          "triggers": [],
+          "checkpoint_ns": "",
+          "path": null,
+          "input_channels": [],
+          "from_trace": false,
+          "from_checkpoint": true,
+          "scheduled_from": "1f1ab311-0f94-6c9c-bfff-ee5133dc19cc",
+          "resolution": "checkpoint_writes",
+          "wrote": true,
+          "outcome": null,
+          "label": "__input__@-1 (turn 0)"
+        },
+        {
+          "task_id": "f80c8b4c-eb29-9dcd-b166-f4fa5c848c8d",
+          "node": "supervisor",
+          "step": 1,
+          "turn": 0,
+          "invoke_id": "t0",
+          "triggers": [
+            "branch:to:supervisor"
+          ],
+          "checkpoint_ns": "supervisor:f80c8b4c-eb29-9dcd-b166-f4fa5c848c8d",
+          "path": [
+            "__pregel_pull",
+            "supervisor"
+          ],
+          "input_channels": [
+            "messages"
+          ],
+          "from_trace": true,
+          "from_checkpoint": true,
+          "scheduled_from": "1f1ab311-0f97-69a1-8000-e23c1401116c",
+          "resolution": "checkpoint_writes",
+          "wrote": true,
+          "outcome": null,
+          "label": "supervisor@1 (turn 0)"
+        }
+      ],
+      "state_versions": [
+        {
+          "channel": "branch:to:supervisor",
+          "version": "00000000000000000000000000000002.0.12064815313111954",
+          "checkpoint_id": "1f1ab311-0f97-69a1-8000-e23c1401116c",
+          "step": 0,
+          "producer_task_ids": [
+            "069afb78-c334-0254-dcb0-96cccd5abc8b"
+          ],
+          "key": "branch:to:supervisor:00000000000000000000000000000002.0.12064815313111954"
+        },
+        {
+          "channel": "messages",
+          "version": "00000000000000000000000000000002.0.12064815313111954",
+          "checkpoint_id": "1f1ab311-0f97-69a1-8000-e23c1401116c",
+          "step": 0,
+          "producer_task_ids": [
+            "069afb78-c334-0254-dcb0-96cccd5abc8b"
+          ],
+          "key": "messages:00000000000000000000000000000002.0.12064815313111954"
+        },
+        {
+          "channel": "messages",
+          "version": "00000000000000000000000000000003.0.7368290366656945",
+          "checkpoint_id": "1f1ab311-1cc7-6f79-8001-b6c74965b4ea",
+          "step": 1,
+          "producer_task_ids": [
+            "f80c8b4c-eb29-9dcd-b166-f4fa5c848c8d"
+          ],
+          "key": "messages:00000000000000000000000000000003.0.7368290366656945"
+        }
+      ],
+      "writes": [
+        {
+          "task_id": "069afb78-c334-0254-dcb0-96cccd5abc8b",
+          "state": "messages:00000000000000000000000000000002.0.12064815313111954",
+          "evidence": {
+            "source": "checkpoint.pending_writes",
+            "checkpoint_id": "1f1ab311-0f94-6c9c-bfff-ee5133dc19cc",
+            "step": -1,
+            "channel": "messages",
+            "version": "00000000000000000000000000000002.0.12064815313111954",
+            "task_id": "069afb78-c334-0254-dcb0-96cccd5abc8b",
+            "value_sha1": "c8e0323e88ec",
+            "note": "version read from channel_versions of 1f1ab311-0f97-69a1-8000-e23c1401116c"
+          }
+        },
+        {
+          "task_id": "069afb78-c334-0254-dcb0-96cccd5abc8b",
+          "state": "branch:to:supervisor:00000000000000000000000000000002.0.12064815313111954",
+          "evidence": {
+            "source": "checkpoint.pending_writes",
+            "checkpoint_id": "1f1ab311-0f94-6c9c-bfff-ee5133dc19cc",
+            "step": -1,
+            "channel": "branch:to:supervisor",
+            "version": "00000000000000000000000000000002.0.12064815313111954",
+            "task_id": "069afb78-c334-0254-dcb0-96cccd5abc8b",
+            "value_sha1": "2be88ca4242c",
+            "note": "version read from channel_versions of 1f1ab311-0f97-69a1-8000-e23c1401116c"
+          }
+        },
+        {
+          "task_id": "f80c8b4c-eb29-9dcd-b166-f4fa5c848c8d",
+          "state": "messages:00000000000000000000000000000003.0.7368290366656945",
+          "evidence": {
+            "source": "checkpoint.pending_writes",
+            "checkpoint_id": "1f1ab311-0f97-69a1-8000-e23c1401116c",
+            "step": 0,
+            "channel": "messages",
+            "version": "00000000000000000000000000000003.0.7368290366656945",
+            "task_id": "f80c8b4c-eb29-9dcd-b166-f4fa5c848c8d",
+            "value_sha1": "c72b61dec33a",
+            "note": "version read from channel_versions of 1f1ab311-1cc7-6f79-8001-b6c74965b4ea"
+          }
+        }
+      ],
+      "reads": [
+        {
+          "state": "messages:00000000000000000000000000000002.0.12064815313111954",
+          "task_ids": [
+            "f80c8b4c-eb29-9dcd-b166-f4fa5c848c8d"
+          ],
+          "node": "supervisor",
+          "kind": "state",
+          "ambiguous": false,
+          "evidence": {
+            "source": "checkpoint.channel_versions + task.input",
+            "checkpoint_id": "1f1ab311-0f97-69a1-8000-e23c1401116c",
+            "step": 0,
+            "channel": "messages",
+            "version": "00000000000000000000000000000002.0.12064815313111954",
+            "task_id": "f80c8b4c-eb29-9dcd-b166-f4fa5c848c8d",
+            "node": "supervisor",
+            "note": "the version this channel held in the checkpoint the task was scheduled from (placed by checkpoint_writes); the channel is one the task's recorded input carried"
+          }
+        }
+      ],
+      "triggers": [
+        {
+          "state": "branch:to:supervisor:00000000000000000000000000000002.0.12064815313111954",
+          "task_ids": [
+            "f80c8b4c-eb29-9dcd-b166-f4fa5c848c8d"
+          ],
+          "node": "supervisor",
+          "kind": "trigger",
+          "ambiguous": false,
+          "evidence": {
+            "source": "checkpoint.versions_seen",
+            "checkpoint_id": "1f1ab311-1cc7-6f79-8001-b6c74965b4ea",
+            "step": 1,
+            "channel": "branch:to:supervisor",
+            "version": "00000000000000000000000000000002.0.12064815313111954",
+            "node": "supervisor"
+          }
+        }
+      ],
+      "derived": [
+        {
+          "state": "messages:00000000000000000000000000000003.0.7368290366656945",
+          "derived_from": "messages:00000000000000000000000000000002.0.12064815313111954",
+          "verdict": "verified",
+          "evidence_class": "observed",
+          "kept": 1,
+          "lost_element_ids": [],
+          "evidence": {
+            "source": "element ids recorded per version",
+            "checkpoint_id": "1f1ab311-1cc7-6f79-8001-b6c74965b4ea",
+            "step": 1,
+            "channel": "messages",
+            "version": "00000000000000000000000000000003.0.7368290366656945",
+            "note": "channel class BinaryOperatorAggregate; all 1 element ids of the earlier version are present in this one"
+          }
+        }
+      ],
+      "incoming": [],
+      "outgoing": [
+        {
+          "kind": "derived_from",
+          "from_turn": 0,
+          "to_turn": 1,
+          "state": "messages:00000000000000000000000000000005.0.4251445223825404",
+          "from_state": "messages:00000000000000000000000000000003.0.7368290366656945",
+          "task_ids": [],
+          "node": null,
+          "evidence": {
+            "source": "element ids recorded per version",
+            "checkpoint_id": "1f1ab311-2196-6e3a-8003-8ce35a02028a",
+            "step": 3,
+            "channel": "messages",
+            "version": "00000000000000000000000000000005.0.4251445223825404",
+            "note": "channel class BinaryOperatorAggregate; all 2 element ids of the earlier version are present in this one"
+          },
+          "verdict": "verified"
+        }
+      ],
+      "checkpoints": [
+        {
+          "checkpoint_id": "1f1ab311-0f94-6c9c-bfff-ee5133dc19cc",
+          "parent_checkpoint_id": null,
+          "step": -1,
+          "source": "input",
+          "updated_channels": [
+            "__start__"
+          ],
+          "n_writes": 2,
+          "turn": 0
+        },
+        {
+          "checkpoint_id": "1f1ab311-0f97-69a1-8000-e23c1401116c",
+          "parent_checkpoint_id": "1f1ab311-0f94-6c9c-bfff-ee5133dc19cc",
+          "step": 0,
+          "source": "loop",
+          "updated_channels": [
+            "branch:to:supervisor",
+            "messages"
+          ],
+          "n_writes": 1,
+          "turn": 0
+        },
+        {
+          "checkpoint_id": "1f1ab311-1cc7-6f79-8001-b6c74965b4ea",
+          "parent_checkpoint_id": "1f1ab311-0f97-69a1-8000-e23c1401116c",
+          "step": 1,
+          "source": "loop",
+          "updated_channels": [
+            "messages"
+          ],
+          "n_writes": 0,
+          "turn": 0
+        }
+      ]
+    },
+    {
+      "turn": 1,
+      "summary": {
+        "turn": 1,
+        "invoke_ids": [
+          "t1"
+        ],
+        "first_seq": 15,
+        "last_seq": 66,
+        "first_step": 2,
+        "last_step": 6,
+        "steps": [
+          2,
+          4,
+          5,
+          6
+        ],
+        "nodes": [
+          "__input__",
+          "supervisor",
+          "lookup"
+        ],
+        "task_runs": 4,
+        "agent_task_runs": 3,
+        "event_count": 52,
+        "checkpoints": 5,
+        "wall_time": 18.121516704559326,
+        "error": null
+      },
+      "task_runs": [
+        {
+          "task_id": "3266dae1-93da-26e3-adac-668564ab4dbe",
+          "node": "__input__",
+          "step": 2,
+          "turn": 1,
+          "invoke_id": null,
+          "triggers": [],
+          "checkpoint_ns": "",
+          "path": null,
+          "input_channels": [],
+          "from_trace": false,
+          "from_checkpoint": true,
+          "scheduled_from": "1f1ab311-2193-6ae2-8002-4df9473dfe1e",
+          "resolution": "checkpoint_writes",
+          "wrote": true,
+          "outcome": null,
+          "label": "__input__@2 (turn 1)"
+        },
+        {
+          "task_id": "5ab04f19-da84-0a55-42ca-169f58cb369a",
+          "node": "supervisor",
+          "step": 4,
+          "turn": 1,
+          "invoke_id": "t1",
+          "triggers": [
+            "branch:to:supervisor"
+          ],
+          "checkpoint_ns": "supervisor:5ab04f19-da84-0a55-42ca-169f58cb369a",
+          "path": [
+            "__pregel_pull",
+            "supervisor"
+          ],
+          "input_channels": [
+            "messages"
+          ],
+          "from_trace": true,
+          "from_checkpoint": true,
+          "scheduled_from": "1f1ab311-2196-6e3a-8003-8ce35a02028a",
+          "resolution": "checkpoint_writes",
+          "wrote": true,
+          "outcome": null,
+          "label": "supervisor@4 (turn 1)"
+        },
+        {
+          "task_id": "2a0cbb7b-e3af-43f8-925c-7f9b3bf7636c",
+          "node": "lookup",
+          "step": 5,
+          "turn": 1,
+          "invoke_id": "t1",
+          "triggers": [
+            "branch:to:lookup"
+          ],
+          "checkpoint_ns": "lookup:2a0cbb7b-e3af-43f8-925c-7f9b3bf7636c",
+          "path": [
+            "__pregel_pull",
+            "lookup"
+          ],
+          "input_channels": [
+            "messages"
+          ],
+          "from_trace": true,
+          "from_checkpoint": true,
+          "scheduled_from": "1f1ab311-2f4b-6573-8004-5da1dda42928",
+          "resolution": "checkpoint_writes",
+          "wrote": true,
+          "outcome": null,
+          "label": "lookup@5 (turn 1)"
+        },
+        {
+          "task_id": "bd54dc0f-991a-4919-e7c1-d91f4fca2044",
+          "node": "supervisor",
+          "step": 6,
+          "turn": 1,
+          "invoke_id": "t1",
+          "triggers": [
+            "branch:to:supervisor"
+          ],
+          "checkpoint_ns": "supervisor:bd54dc0f-991a-4919-e7c1-d91f4fca2044",
+          "path": [
+            "__pregel_pull",
+            "supervisor"
+          ],
+          "input_channels": [
+            "messages"
+          ],
+          "from_trace": true,
+          "from_checkpoint": true,
+          "scheduled_from": "1f1ab311-b7dc-6a2d-8005-a9d0577e152b",
+          "resolution": "checkpoint_writes",
+          "wrote": true,
+          "outcome": null,
+          "label": "supervisor@6 (turn 1)"
+        }
+      ],
+      "state_versions": [
+        {
+          "channel": "branch:to:supervisor",
+          "version": "00000000000000000000000000000005.0.4251445223825404",
+          "checkpoint_id": "1f1ab311-2196-6e3a-8003-8ce35a02028a",
+          "step": 3,
+          "producer_task_ids": [
+            "3266dae1-93da-26e3-adac-668564ab4dbe"
+          ],
+          "key": "branch:to:supervisor:00000000000000000000000000000005.0.4251445223825404"
+        },
+        {
+          "channel": "messages",
+          "version": "00000000000000000000000000000005.0.4251445223825404",
+          "checkpoint_id": "1f1ab311-2196-6e3a-8003-8ce35a02028a",
+          "step": 3,
+          "producer_task_ids": [
+            "3266dae1-93da-26e3-adac-668564ab4dbe"
+          ],
+          "key": "messages:00000000000000000000000000000005.0.4251445223825404"
+        },
+        {
+          "channel": "branch:to:lookup",
+          "version": "00000000000000000000000000000006.0.12910927027256547",
+          "checkpoint_id": "1f1ab311-2f4b-6573-8004-5da1dda42928",
+          "step": 4,
+          "producer_task_ids": [
+            "5ab04f19-da84-0a55-42ca-169f58cb369a"
+          ],
+          "key": "branch:to:lookup:00000000000000000000000000000006.0.12910927027256547"
+        },
+        {
+          "channel": "messages",
+          "version": "00000000000000000000000000000006.0.12910927027256547",
+          "checkpoint_id": "1f1ab311-2f4b-6573-8004-5da1dda42928",
+          "step": 4,
+          "producer_task_ids": [
+            "5ab04f19-da84-0a55-42ca-169f58cb369a"
+          ],
+          "key": "messages:00000000000000000000000000000006.0.12910927027256547"
+        },
+        {
+          "channel": "branch:to:supervisor",
+          "version": "00000000000000000000000000000007.0.7592445727788985",
+          "checkpoint_id": "1f1ab311-b7dc-6a2d-8005-a9d0577e152b",
+          "step": 5,
+          "producer_task_ids": [
+            "2a0cbb7b-e3af-43f8-925c-7f9b3bf7636c"
+          ],
+          "key": "branch:to:supervisor:00000000000000000000000000000007.0.7592445727788985"
+        },
+        {
+          "channel": "messages",
+          "version": "00000000000000000000000000000007.0.7592445727788985",
+          "checkpoint_id": "1f1ab311-b7dc-6a2d-8005-a9d0577e152b",
+          "step": 5,
+          "producer_task_ids": [
+            "2a0cbb7b-e3af-43f8-925c-7f9b3bf7636c"
+          ],
+          "key": "messages:00000000000000000000000000000007.0.7592445727788985"
+        },
+        {
+          "channel": "messages",
+          "version": "00000000000000000000000000000008.0.652857166073468",
+          "checkpoint_id": "1f1ab311-ce5f-67e8-8006-a8aa11756dae",
+          "step": 6,
+          "producer_task_ids": [
+            "bd54dc0f-991a-4919-e7c1-d91f4fca2044"
+          ],
+          "key": "messages:00000000000000000000000000000008.0.652857166073468"
+        }
+      ],
+      "writes": [
+        {
+          "task_id": "3266dae1-93da-26e3-adac-668564ab4dbe",
+          "state": "messages:00000000000000000000000000000005.0.4251445223825404",
+          "evidence": {
+            "source": "checkpoint.pending_writes",
+            "checkpoint_id": "1f1ab311-2193-6ae2-8002-4df9473dfe1e",
+            "step": 2,
+            "channel": "messages",
+            "version": "00000000000000000000000000000005.0.4251445223825404",
+            "task_id": "3266dae1-93da-26e3-adac-668564ab4dbe",
+            "value_sha1": "f7c28d3ac113",
+            "note": "version read from channel_versions of 1f1ab311-2196-6e3a-8003-8ce35a02028a"
+          }
+        },
+        {
+          "task_id": "3266dae1-93da-26e3-adac-668564ab4dbe",
+          "state": "branch:to:supervisor:00000000000000000000000000000005.0.4251445223825404",
+          "evidence": {
+            "source": "checkpoint.pending_writes",
+            "checkpoint_id": "1f1ab311-2193-6ae2-8002-4df9473dfe1e",
+            "step": 2,
+            "channel": "branch:to:supervisor",
+            "version": "00000000000000000000000000000005.0.4251445223825404",
+            "task_id": "3266dae1-93da-26e3-adac-668564ab4dbe",
+            "value_sha1": "2be88ca4242c",
+            "note": "version read from channel_versions of 1f1ab311-2196-6e3a-8003-8ce35a02028a"
+          }
+        },
+        {
+          "task_id": "5ab04f19-da84-0a55-42ca-169f58cb369a",
+          "state": "messages:00000000000000000000000000000006.0.12910927027256547",
+          "evidence": {
+            "source": "checkpoint.pending_writes",
+            "checkpoint_id": "1f1ab311-2196-6e3a-8003-8ce35a02028a",
+            "step": 3,
+            "channel": "messages",
+            "version": "00000000000000000000000000000006.0.12910927027256547",
+            "task_id": "5ab04f19-da84-0a55-42ca-169f58cb369a",
+            "value_sha1": "abd553bbbf71",
+            "note": "version read from channel_versions of 1f1ab311-2f4b-6573-8004-5da1dda42928"
+          }
+        },
+        {
+          "task_id": "5ab04f19-da84-0a55-42ca-169f58cb369a",
+          "state": "branch:to:lookup:00000000000000000000000000000006.0.12910927027256547",
+          "evidence": {
+            "source": "checkpoint.pending_writes",
+            "checkpoint_id": "1f1ab311-2196-6e3a-8003-8ce35a02028a",
+            "step": 3,
+            "channel": "branch:to:lookup",
+            "version": "00000000000000000000000000000006.0.12910927027256547",
+            "task_id": "5ab04f19-da84-0a55-42ca-169f58cb369a",
+            "value_sha1": "2be88ca4242c",
+            "note": "version read from channel_versions of 1f1ab311-2f4b-6573-8004-5da1dda42928"
+          }
+        },
+        {
+          "task_id": "2a0cbb7b-e3af-43f8-925c-7f9b3bf7636c",
+          "state": "messages:00000000000000000000000000000007.0.7592445727788985",
+          "evidence": {
+            "source": "checkpoint.pending_writes",
+            "checkpoint_id": "1f1ab311-2f4b-6573-8004-5da1dda42928",
+            "step": 4,
+            "channel": "messages",
+            "version": "00000000000000000000000000000007.0.7592445727788985",
+            "task_id": "2a0cbb7b-e3af-43f8-925c-7f9b3bf7636c",
+            "value_sha1": "f36c251d8fce",
+            "note": "version read from channel_versions of 1f1ab311-b7dc-6a2d-8005-a9d0577e152b"
+          }
+        },
+        {
+          "task_id": "2a0cbb7b-e3af-43f8-925c-7f9b3bf7636c",
+          "state": "branch:to:supervisor:00000000000000000000000000000007.0.7592445727788985",
+          "evidence": {
+            "source": "checkpoint.pending_writes",
+            "checkpoint_id": "1f1ab311-2f4b-6573-8004-5da1dda42928",
+            "step": 4,
+            "channel": "branch:to:supervisor",
+            "version": "00000000000000000000000000000007.0.7592445727788985",
+            "task_id": "2a0cbb7b-e3af-43f8-925c-7f9b3bf7636c",
+            "value_sha1": "2be88ca4242c",
+            "note": "version read from channel_versions of 1f1ab311-b7dc-6a2d-8005-a9d0577e152b"
+          }
+        },
+        {
+          "task_id": "bd54dc0f-991a-4919-e7c1-d91f4fca2044",
+          "state": "messages:00000000000000000000000000000008.0.652857166073468",
+          "evidence": {
+            "source": "checkpoint.pending_writes",
+            "checkpoint_id": "1f1ab311-b7dc-6a2d-8005-a9d0577e152b",
+            "step": 5,
+            "channel": "messages",
+            "version": "00000000000000000000000000000008.0.652857166073468",
+            "task_id": "bd54dc0f-991a-4919-e7c1-d91f4fca2044",
+            "value_sha1": "d8d45ee030fd",
+            "note": "version read from channel_versions of 1f1ab311-ce5f-67e8-8006-a8aa11756dae"
+          }
+        }
+      ],
+      "reads": [
+        {
+          "state": "messages:00000000000000000000000000000005.0.4251445223825404",
+          "task_ids": [
+            "5ab04f19-da84-0a55-42ca-169f58cb369a"
+          ],
+          "node": "supervisor",
+          "kind": "state",
+          "ambiguous": false,
+          "evidence": {
+            "source": "checkpoint.channel_versions + task.input",
+            "checkpoint_id": "1f1ab311-2196-6e3a-8003-8ce35a02028a",
+            "step": 3,
+            "channel": "messages",
+            "version": "00000000000000000000000000000005.0.4251445223825404",
+            "task_id": "5ab04f19-da84-0a55-42ca-169f58cb369a",
+            "node": "supervisor",
+            "note": "the version this channel held in the checkpoint the task was scheduled from (placed by checkpoint_writes); the channel is one the task's recorded input carried"
+          }
+        },
+        {
+          "state": "messages:00000000000000000000000000000006.0.12910927027256547",
+          "task_ids": [
+            "2a0cbb7b-e3af-43f8-925c-7f9b3bf7636c"
+          ],
+          "node": "lookup",
+          "kind": "state",
+          "ambiguous": false,
+          "evidence": {
+            "source": "checkpoint.channel_versions + task.input",
+            "checkpoint_id": "1f1ab311-2f4b-6573-8004-5da1dda42928",
+            "step": 4,
+            "channel": "messages",
+            "version": "00000000000000000000000000000006.0.12910927027256547",
+            "task_id": "2a0cbb7b-e3af-43f8-925c-7f9b3bf7636c",
+            "node": "lookup",
+            "note": "the version this channel held in the checkpoint the task was scheduled from (placed by checkpoint_writes); the channel is one the task's recorded input carried"
+          }
+        },
+        {
+          "state": "messages:00000000000000000000000000000007.0.7592445727788985",
+          "task_ids": [
+            "bd54dc0f-991a-4919-e7c1-d91f4fca2044"
+          ],
+          "node": "supervisor",
+          "kind": "state",
+          "ambiguous": false,
+          "evidence": {
+            "source": "checkpoint.channel_versions + task.input",
+            "checkpoint_id": "1f1ab311-b7dc-6a2d-8005-a9d0577e152b",
+            "step": 5,
+            "channel": "messages",
+            "version": "00000000000000000000000000000007.0.7592445727788985",
+            "task_id": "bd54dc0f-991a-4919-e7c1-d91f4fca2044",
+            "node": "supervisor",
+            "note": "the version this channel held in the checkpoint the task was scheduled from (placed by checkpoint_writes); the channel is one the task's recorded input carried"
+          }
+        }
+      ],
+      "triggers": [
+        {
+          "state": "branch:to:supervisor:00000000000000000000000000000005.0.4251445223825404",
+          "task_ids": [
+            "5ab04f19-da84-0a55-42ca-169f58cb369a"
+          ],
+          "node": "supervisor",
+          "kind": "trigger",
+          "ambiguous": false,
+          "evidence": {
+            "source": "checkpoint.versions_seen",
+            "checkpoint_id": "1f1ab311-2f4b-6573-8004-5da1dda42928",
+            "step": 4,
+            "channel": "branch:to:supervisor",
+            "version": "00000000000000000000000000000005.0.4251445223825404",
+            "node": "supervisor"
+          }
+        },
+        {
+          "state": "branch:to:lookup:00000000000000000000000000000006.0.12910927027256547",
+          "task_ids": [
+            "2a0cbb7b-e3af-43f8-925c-7f9b3bf7636c"
+          ],
+          "node": "lookup",
+          "kind": "trigger",
+          "ambiguous": false,
+          "evidence": {
+            "source": "checkpoint.versions_seen",
+            "checkpoint_id": "1f1ab311-b7dc-6a2d-8005-a9d0577e152b",
+            "step": 5,
+            "channel": "branch:to:lookup",
+            "version": "00000000000000000000000000000006.0.12910927027256547",
+            "node": "lookup"
+          }
+        },
+        {
+          "state": "branch:to:supervisor:00000000000000000000000000000007.0.7592445727788985",
+          "task_ids": [
+            "bd54dc0f-991a-4919-e7c1-d91f4fca2044"
+          ],
+          "node": "supervisor",
+          "kind": "trigger",
+          "ambiguous": false,
+          "evidence": {
+            "source": "checkpoint.versions_seen",
+            "checkpoint_id": "1f1ab311-ce5f-67e8-8006-a8aa11756dae",
+            "step": 6,
+            "channel": "branch:to:supervisor",
+            "version": "00000000000000000000000000000007.0.7592445727788985",
+            "node": "supervisor"
+          }
+        }
+      ],
+      "derived": [
+        {
+          "state": "messages:00000000000000000000000000000006.0.12910927027256547",
+          "derived_from": "messages:00000000000000000000000000000005.0.4251445223825404",
+          "verdict": "verified",
+          "evidence_class": "observed",
+          "kept": 3,
+          "lost_element_ids": [],
+          "evidence": {
+            "source": "element ids recorded per version",
+            "checkpoint_id": "1f1ab311-2f4b-6573-8004-5da1dda42928",
+            "step": 4,
+            "channel": "messages",
+            "version": "00000000000000000000000000000006.0.12910927027256547",
+            "note": "channel class BinaryOperatorAggregate; all 3 element ids of the earlier version are present in this one"
+          }
+        },
+        {
+          "state": "messages:00000000000000000000000000000007.0.7592445727788985",
+          "derived_from": "messages:00000000000000000000000000000006.0.12910927027256547",
+          "verdict": "verified",
+          "evidence_class": "observed",
+          "kept": 4,
+          "lost_element_ids": [],
+          "evidence": {
+            "source": "element ids recorded per version",
+            "checkpoint_id": "1f1ab311-b7dc-6a2d-8005-a9d0577e152b",
+            "step": 5,
+            "channel": "messages",
+            "version": "00000000000000000000000000000007.0.7592445727788985",
+            "note": "channel class BinaryOperatorAggregate; all 4 element ids of the earlier version are present in this one"
+          }
+        },
+        {
+          "state": "messages:00000000000000000000000000000008.0.652857166073468",
+          "derived_from": "messages:00000000000000000000000000000007.0.7592445727788985",
+          "verdict": "verified",
+          "evidence_class": "observed",
+          "kept": 5,
+          "lost_element_ids": [],
+          "evidence": {
+            "source": "element ids recorded per version",
+            "checkpoint_id": "1f1ab311-ce5f-67e8-8006-a8aa11756dae",
+            "step": 6,
+            "channel": "messages",
+            "version": "00000000000000000000000000000008.0.652857166073468",
+            "note": "channel class BinaryOperatorAggregate; all 5 element ids of the earlier version are present in this one"
+          }
+        }
+      ],
+      "incoming": [
+        {
+          "kind": "derived_from",
+          "from_turn": 0,
+          "to_turn": 1,
+          "state": "messages:00000000000000000000000000000005.0.4251445223825404",
+          "from_state": "messages:00000000000000000000000000000003.0.7368290366656945",
+          "task_ids": [],
+          "node": null,
+          "evidence": {
+            "source": "element ids recorded per version",
+            "checkpoint_id": "1f1ab311-2196-6e3a-8003-8ce35a02028a",
+            "step": 3,
+            "channel": "messages",
+            "version": "00000000000000000000000000000005.0.4251445223825404",
+            "note": "channel class BinaryOperatorAggregate; all 2 element ids of the earlier version are present in this one"
+          },
+          "verdict": "verified"
+        }
+      ],
+      "outgoing": [
+        {
+          "kind": "derived_from",
+          "from_turn": 1,
+          "to_turn": 2,
+          "state": "messages:00000000000000000000000000000010.0.00017371187496229012",
+          "from_state": "messages:00000000000000000000000000000008.0.652857166073468",
+          "task_ids": [],
+          "node": null,
+          "evidence": {
+            "source": "element ids recorded per version",
+            "checkpoint_id": "1f1ab311-dc7a-6e35-8008-fc6b27144ed3",
+            "step": 8,
+            "channel": "messages",
+            "version": "00000000000000000000000000000010.0.00017371187496229012",
+            "note": "channel class BinaryOperatorAggregate; all 6 element ids of the earlier version are present in this one"
+          },
+          "verdict": "verified"
+        }
+      ],
+      "checkpoints": [
+        {
+          "checkpoint_id": "1f1ab311-2193-6ae2-8002-4df9473dfe1e",
+          "parent_checkpoint_id": "1f1ab311-1cc7-6f79-8001-b6c74965b4ea",
+          "step": 2,
+          "source": "input",
+          "updated_channels": [
+            "__start__"
+          ],
+          "n_writes": 2,
+          "turn": 1
+        },
+        {
+          "checkpoint_id": "1f1ab311-2196-6e3a-8003-8ce35a02028a",
+          "parent_checkpoint_id": "1f1ab311-2193-6ae2-8002-4df9473dfe1e",
+          "step": 3,
+          "source": "loop",
+          "updated_channels": [
+            "branch:to:supervisor",
+            "messages"
+          ],
+          "n_writes": 2,
+          "turn": 1
+        },
+        {
+          "checkpoint_id": "1f1ab311-2f4b-6573-8004-5da1dda42928",
+          "parent_checkpoint_id": "1f1ab311-2196-6e3a-8003-8ce35a02028a",
+          "step": 4,
+          "source": "loop",
+          "updated_channels": [
+            "branch:to:lookup",
+            "messages"
+          ],
+          "n_writes": 2,
+          "turn": 1
+        },
+        {
+          "checkpoint_id": "1f1ab311-b7dc-6a2d-8005-a9d0577e152b",
+          "parent_checkpoint_id": "1f1ab311-2f4b-6573-8004-5da1dda42928",
+          "step": 5,
+          "source": "loop",
+          "updated_channels": [
+            "branch:to:supervisor",
+            "messages"
+          ],
+          "n_writes": 1,
+          "turn": 1
+        },
+        {
+          "checkpoint_id": "1f1ab311-ce5f-67e8-8006-a8aa11756dae",
+          "parent_checkpoint_id": "1f1ab311-b7dc-6a2d-8005-a9d0577e152b",
+          "step": 6,
+          "source": "loop",
+          "updated_channels": [
+            "messages"
+          ],
+          "n_writes": 0,
+          "turn": 1
+        }
+      ]
+    },
+    {
+      "turn": 2,
+      "summary": {
+        "turn": 2,
+        "invoke_ids": [
+          "t2"
+        ],
+        "first_seq": 67,
+        "last_seq": 106,
+        "first_step": 7,
+        "last_step": 11,
+        "steps": [
+          7,
+          9,
+          10,
+          11
+        ],
+        "nodes": [
+          "__input__",
+          "supervisor",
+          "booking"
+        ],
+        "task_runs": 4,
+        "agent_task_runs": 3,
+        "event_count": 40,
+        "checkpoints": 5,
+        "wall_time": 18.184603214263916,
+        "error": null
+      },
+      "task_runs": [
+        {
+          "task_id": "4b1b4a94-cf51-6e79-1ae1-54a0ca3b3489",
+          "node": "__input__",
+          "step": 7,
+          "turn": 2,
+          "invoke_id": null,
+          "triggers": [],
+          "checkpoint_ns": "",
+          "path": null,
+          "input_channels": [],
+          "from_trace": false,
+          "from_checkpoint": true,
+          "scheduled_from": "1f1ab311-dc78-6a82-8007-ffb6988e3d45",
+          "resolution": "checkpoint_writes",
+          "wrote": true,
+          "outcome": null,
+          "label": "__input__@7 (turn 2)"
+        },
+        {
+          "task_id": "53361bbb-60de-1ec0-3e54-2cb20c574969",
+          "node": "supervisor",
+          "step": 9,
+          "turn": 2,
+          "invoke_id": "t2",
+          "triggers": [
+            "branch:to:supervisor"
+          ],
+          "checkpoint_ns": "supervisor:53361bbb-60de-1ec0-3e54-2cb20c574969",
+          "path": [
+            "__pregel_pull",
+            "supervisor"
+          ],
+          "input_channels": [
+            "messages"
+          ],
+          "from_trace": true,
+          "from_checkpoint": true,
+          "scheduled_from": "1f1ab311-dc7a-6e35-8008-fc6b27144ed3",
+          "resolution": "checkpoint_writes",
+          "wrote": true,
+          "outcome": null,
+          "label": "supervisor@9 (turn 2)"
+        },
+        {
+          "task_id": "5ce1baa6-855e-44bb-9133-be97eba7e992",
+          "node": "booking",
+          "step": 10,
+          "turn": 2,
+          "invoke_id": "t2",
+          "triggers": [
+            "branch:to:booking"
+          ],
+          "checkpoint_ns": "booking:5ce1baa6-855e-44bb-9133-be97eba7e992",
+          "path": [
+            "__pregel_pull",
+            "booking"
+          ],
+          "input_channels": [
+            "messages"
+          ],
+          "from_trace": true,
+          "from_checkpoint": true,
+          "scheduled_from": "1f1ab311-f85b-60fd-8009-bd3ebc937eb1",
+          "resolution": "checkpoint_writes",
+          "wrote": true,
+          "outcome": null,
+          "label": "booking@10 (turn 2)"
+        },
+        {
+          "task_id": "aba3c0ce-49bc-14cb-60b6-a2c5a62d8d25",
+          "node": "supervisor",
+          "step": 11,
+          "turn": 2,
+          "invoke_id": "t2",
+          "triggers": [
+            "branch:to:supervisor"
+          ],
+          "checkpoint_ns": "supervisor:aba3c0ce-49bc-14cb-60b6-a2c5a62d8d25",
+          "path": [
+            "__pregel_pull",
+            "supervisor"
+          ],
+          "input_channels": [
+            "messages"
+          ],
+          "from_trace": true,
+          "from_checkpoint": true,
+          "scheduled_from": "1f1ab312-7647-6726-800a-3afafde42129",
+          "resolution": "checkpoint_writes",
+          "wrote": true,
+          "outcome": null,
+          "label": "supervisor@11 (turn 2)"
+        }
+      ],
+      "state_versions": [
+        {
+          "channel": "branch:to:supervisor",
+          "version": "00000000000000000000000000000010.0.00017371187496229012",
+          "checkpoint_id": "1f1ab311-dc7a-6e35-8008-fc6b27144ed3",
+          "step": 8,
+          "producer_task_ids": [
+            "4b1b4a94-cf51-6e79-1ae1-54a0ca3b3489"
+          ],
+          "key": "branch:to:supervisor:00000000000000000000000000000010.0.00017371187496229012"
+        },
+        {
+          "channel": "messages",
+          "version": "00000000000000000000000000000010.0.00017371187496229012",
+          "checkpoint_id": "1f1ab311-dc7a-6e35-8008-fc6b27144ed3",
+          "step": 8,
+          "producer_task_ids": [
+            "4b1b4a94-cf51-6e79-1ae1-54a0ca3b3489"
+          ],
+          "key": "messages:00000000000000000000000000000010.0.00017371187496229012"
+        },
+        {
+          "channel": "branch:to:booking",
+          "version": "00000000000000000000000000000011.0.0337103508337645",
+          "checkpoint_id": "1f1ab311-f85b-60fd-8009-bd3ebc937eb1",
+          "step": 9,
+          "producer_task_ids": [
+            "53361bbb-60de-1ec0-3e54-2cb20c574969"
+          ],
+          "key": "branch:to:booking:00000000000000000000000000000011.0.0337103508337645"
+        },
+        {
+          "channel": "messages",
+          "version": "00000000000000000000000000000011.0.0337103508337645",
+          "checkpoint_id": "1f1ab311-f85b-60fd-8009-bd3ebc937eb1",
+          "step": 9,
+          "producer_task_ids": [
+            "53361bbb-60de-1ec0-3e54-2cb20c574969"
+          ],
+          "key": "messages:00000000000000000000000000000011.0.0337103508337645"
+        },
+        {
+          "channel": "branch:to:supervisor",
+          "version": "00000000000000000000000000000012.0.7176290678833201",
+          "checkpoint_id": "1f1ab312-7647-6726-800a-3afafde42129",
+          "step": 10,
+          "producer_task_ids": [
+            "5ce1baa6-855e-44bb-9133-be97eba7e992"
+          ],
+          "key": "branch:to:supervisor:00000000000000000000000000000012.0.7176290678833201"
+        },
+        {
+          "channel": "messages",
+          "version": "00000000000000000000000000000012.0.7176290678833201",
+          "checkpoint_id": "1f1ab312-7647-6726-800a-3afafde42129",
+          "step": 10,
+          "producer_task_ids": [
+            "5ce1baa6-855e-44bb-9133-be97eba7e992"
+          ],
+          "key": "messages:00000000000000000000000000000012.0.7176290678833201"
+        },
+        {
+          "channel": "messages",
+          "version": "00000000000000000000000000000013.0.08243108506223051",
+          "checkpoint_id": "1f1ab312-89d9-6740-800b-a2a2e9c84df0",
+          "step": 11,
+          "producer_task_ids": [
+            "aba3c0ce-49bc-14cb-60b6-a2c5a62d8d25"
+          ],
+          "key": "messages:00000000000000000000000000000013.0.08243108506223051"
+        }
+      ],
+      "writes": [
+        {
+          "task_id": "4b1b4a94-cf51-6e79-1ae1-54a0ca3b3489",
+          "state": "messages:00000000000000000000000000000010.0.00017371187496229012",
+          "evidence": {
+            "source": "checkpoint.pending_writes",
+            "checkpoint_id": "1f1ab311-dc78-6a82-8007-ffb6988e3d45",
+            "step": 7,
+            "channel": "messages",
+            "version": "00000000000000000000000000000010.0.00017371187496229012",
+            "task_id": "4b1b4a94-cf51-6e79-1ae1-54a0ca3b3489",
+            "value_sha1": "28739e6a8aa2",
+            "note": "version read from channel_versions of 1f1ab311-dc7a-6e35-8008-fc6b27144ed3"
+          }
+        },
+        {
+          "task_id": "4b1b4a94-cf51-6e79-1ae1-54a0ca3b3489",
+          "state": "branch:to:supervisor:00000000000000000000000000000010.0.00017371187496229012",
+          "evidence": {
+            "source": "checkpoint.pending_writes",
+            "checkpoint_id": "1f1ab311-dc78-6a82-8007-ffb6988e3d45",
+            "step": 7,
+            "channel": "branch:to:supervisor",
+            "version": "00000000000000000000000000000010.0.00017371187496229012",
+            "task_id": "4b1b4a94-cf51-6e79-1ae1-54a0ca3b3489",
+            "value_sha1": "2be88ca4242c",
+            "note": "version read from channel_versions of 1f1ab311-dc7a-6e35-8008-fc6b27144ed3"
+          }
+        },
+        {
+          "task_id": "53361bbb-60de-1ec0-3e54-2cb20c574969",
+          "state": "messages:00000000000000000000000000000011.0.0337103508337645",
+          "evidence": {
+            "source": "checkpoint.pending_writes",
+            "checkpoint_id": "1f1ab311-dc7a-6e35-8008-fc6b27144ed3",
+            "step": 8,
+            "channel": "messages",
+            "version": "00000000000000000000000000000011.0.0337103508337645",
+            "task_id": "53361bbb-60de-1ec0-3e54-2cb20c574969",
+            "value_sha1": "fcf3d18c4687",
+            "note": "version read from channel_versions of 1f1ab311-f85b-60fd-8009-bd3ebc937eb1"
+          }
+        },
+        {
+          "task_id": "53361bbb-60de-1ec0-3e54-2cb20c574969",
+          "state": "branch:to:booking:00000000000000000000000000000011.0.0337103508337645",
+          "evidence": {
+            "source": "checkpoint.pending_writes",
+            "checkpoint_id": "1f1ab311-dc7a-6e35-8008-fc6b27144ed3",
+            "step": 8,
+            "channel": "branch:to:booking",
+            "version": "00000000000000000000000000000011.0.0337103508337645",
+            "task_id": "53361bbb-60de-1ec0-3e54-2cb20c574969",
+            "value_sha1": "2be88ca4242c",
+            "note": "version read from channel_versions of 1f1ab311-f85b-60fd-8009-bd3ebc937eb1"
+          }
+        },
+        {
+          "task_id": "5ce1baa6-855e-44bb-9133-be97eba7e992",
+          "state": "messages:00000000000000000000000000000012.0.7176290678833201",
+          "evidence": {
+            "source": "checkpoint.pending_writes",
+            "checkpoint_id": "1f1ab311-f85b-60fd-8009-bd3ebc937eb1",
+            "step": 9,
+            "channel": "messages",
+            "version": "00000000000000000000000000000012.0.7176290678833201",
+            "task_id": "5ce1baa6-855e-44bb-9133-be97eba7e992",
+            "value_sha1": "3fa500b1b237",
+            "note": "version read from channel_versions of 1f1ab312-7647-6726-800a-3afafde42129"
+          }
+        },
+        {
+          "task_id": "5ce1baa6-855e-44bb-9133-be97eba7e992",
+          "state": "branch:to:supervisor:00000000000000000000000000000012.0.7176290678833201",
+          "evidence": {
+            "source": "checkpoint.pending_writes",
+            "checkpoint_id": "1f1ab311-f85b-60fd-8009-bd3ebc937eb1",
+            "step": 9,
+            "channel": "branch:to:supervisor",
+            "version": "00000000000000000000000000000012.0.7176290678833201",
+            "task_id": "5ce1baa6-855e-44bb-9133-be97eba7e992",
+            "value_sha1": "2be88ca4242c",
+            "note": "version read from channel_versions of 1f1ab312-7647-6726-800a-3afafde42129"
+          }
+        },
+        {
+          "task_id": "aba3c0ce-49bc-14cb-60b6-a2c5a62d8d25",
+          "state": "messages:00000000000000000000000000000013.0.08243108506223051",
+          "evidence": {
+            "source": "checkpoint.pending_writes",
+            "checkpoint_id": "1f1ab312-7647-6726-800a-3afafde42129",
+            "step": 10,
+            "channel": "messages",
+            "version": "00000000000000000000000000000013.0.08243108506223051",
+            "task_id": "aba3c0ce-49bc-14cb-60b6-a2c5a62d8d25",
+            "value_sha1": "b3eb0a87730e",
+            "note": "version read from channel_versions of 1f1ab312-89d9-6740-800b-a2a2e9c84df0"
+          }
+        }
+      ],
+      "reads": [
+        {
+          "state": "messages:00000000000000000000000000000010.0.00017371187496229012",
+          "task_ids": [
+            "53361bbb-60de-1ec0-3e54-2cb20c574969"
+          ],
+          "node": "supervisor",
+          "kind": "state",
+          "ambiguous": false,
+          "evidence": {
+            "source": "checkpoint.channel_versions + task.input",
+            "checkpoint_id": "1f1ab311-dc7a-6e35-8008-fc6b27144ed3",
+            "step": 8,
+            "channel": "messages",
+            "version": "00000000000000000000000000000010.0.00017371187496229012",
+            "task_id": "53361bbb-60de-1ec0-3e54-2cb20c574969",
+            "node": "supervisor",
+            "note": "the version this channel held in the checkpoint the task was scheduled from (placed by checkpoint_writes); the channel is one the task's recorded input carried"
+          }
+        },
+        {
+          "state": "messages:00000000000000000000000000000011.0.0337103508337645",
+          "task_ids": [
+            "5ce1baa6-855e-44bb-9133-be97eba7e992"
+          ],
+          "node": "booking",
+          "kind": "state",
+          "ambiguous": false,
+          "evidence": {
+            "source": "checkpoint.channel_versions + task.input",
+            "checkpoint_id": "1f1ab311-f85b-60fd-8009-bd3ebc937eb1",
+            "step": 9,
+            "channel": "messages",
+            "version": "00000000000000000000000000000011.0.0337103508337645",
+            "task_id": "5ce1baa6-855e-44bb-9133-be97eba7e992",
+            "node": "booking",
+            "note": "the version this channel held in the checkpoint the task was scheduled from (placed by checkpoint_writes); the channel is one the task's recorded input carried"
+          }
+        },
+        {
+          "state": "messages:00000000000000000000000000000012.0.7176290678833201",
+          "task_ids": [
+            "aba3c0ce-49bc-14cb-60b6-a2c5a62d8d25"
+          ],
+          "node": "supervisor",
+          "kind": "state",
+          "ambiguous": false,
+          "evidence": {
+            "source": "checkpoint.channel_versions + task.input",
+            "checkpoint_id": "1f1ab312-7647-6726-800a-3afafde42129",
+            "step": 10,
+            "channel": "messages",
+            "version": "00000000000000000000000000000012.0.7176290678833201",
+            "task_id": "aba3c0ce-49bc-14cb-60b6-a2c5a62d8d25",
+            "node": "supervisor",
+            "note": "the version this channel held in the checkpoint the task was scheduled from (placed by checkpoint_writes); the channel is one the task's recorded input carried"
+          }
+        }
+      ],
+      "triggers": [
+        {
+          "state": "branch:to:supervisor:00000000000000000000000000000010.0.00017371187496229012",
+          "task_ids": [
+            "53361bbb-60de-1ec0-3e54-2cb20c574969"
+          ],
+          "node": "supervisor",
+          "kind": "trigger",
+          "ambiguous": false,
+          "evidence": {
+            "source": "checkpoint.versions_seen",
+            "checkpoint_id": "1f1ab311-f85b-60fd-8009-bd3ebc937eb1",
+            "step": 9,
+            "channel": "branch:to:supervisor",
+            "version": "00000000000000000000000000000010.0.00017371187496229012",
+            "node": "supervisor"
+          }
+        },
+        {
+          "state": "branch:to:booking:00000000000000000000000000000011.0.0337103508337645",
+          "task_ids": [
+            "5ce1baa6-855e-44bb-9133-be97eba7e992"
+          ],
+          "node": "booking",
+          "kind": "trigger",
+          "ambiguous": false,
+          "evidence": {
+            "source": "checkpoint.versions_seen",
+            "checkpoint_id": "1f1ab312-7647-6726-800a-3afafde42129",
+            "step": 10,
+            "channel": "branch:to:booking",
+            "version": "00000000000000000000000000000011.0.0337103508337645",
+            "node": "booking"
+          }
+        },
+        {
+          "state": "branch:to:supervisor:00000000000000000000000000000012.0.7176290678833201",
+          "task_ids": [
+            "aba3c0ce-49bc-14cb-60b6-a2c5a62d8d25"
+          ],
+          "node": "supervisor",
+          "kind": "trigger",
+          "ambiguous": false,
+          "evidence": {
+            "source": "checkpoint.versions_seen",
+            "checkpoint_id": "1f1ab312-89d9-6740-800b-a2a2e9c84df0",
+            "step": 11,
+            "channel": "branch:to:supervisor",
+            "version": "00000000000000000000000000000012.0.7176290678833201",
+            "node": "supervisor"
+          }
+        }
+      ],
+      "derived": [
+        {
+          "state": "messages:00000000000000000000000000000011.0.0337103508337645",
+          "derived_from": "messages:00000000000000000000000000000010.0.00017371187496229012",
+          "verdict": "verified",
+          "evidence_class": "observed",
+          "kept": 7,
+          "lost_element_ids": [],
+          "evidence": {
+            "source": "element ids recorded per version",
+            "checkpoint_id": "1f1ab311-f85b-60fd-8009-bd3ebc937eb1",
+            "step": 9,
+            "channel": "messages",
+            "version": "00000000000000000000000000000011.0.0337103508337645",
+            "note": "channel class BinaryOperatorAggregate; all 7 element ids of the earlier version are present in this one"
+          }
+        },
+        {
+          "state": "messages:00000000000000000000000000000012.0.7176290678833201",
+          "derived_from": "messages:00000000000000000000000000000011.0.0337103508337645",
+          "verdict": "verified",
+          "evidence_class": "observed",
+          "kept": 8,
+          "lost_element_ids": [],
+          "evidence": {
+            "source": "element ids recorded per version",
+            "checkpoint_id": "1f1ab312-7647-6726-800a-3afafde42129",
+            "step": 10,
+            "channel": "messages",
+            "version": "00000000000000000000000000000012.0.7176290678833201",
+            "note": "channel class BinaryOperatorAggregate; all 8 element ids of the earlier version are present in this one"
+          }
+        },
+        {
+          "state": "messages:00000000000000000000000000000013.0.08243108506223051",
+          "derived_from": "messages:00000000000000000000000000000012.0.7176290678833201",
+          "verdict": "verified",
+          "evidence_class": "observed",
+          "kept": 9,
+          "lost_element_ids": [],
+          "evidence": {
+            "source": "element ids recorded per version",
+            "checkpoint_id": "1f1ab312-89d9-6740-800b-a2a2e9c84df0",
+            "step": 11,
+            "channel": "messages",
+            "version": "00000000000000000000000000000013.0.08243108506223051",
+            "note": "channel class BinaryOperatorAggregate; all 9 element ids of the earlier version are present in this one"
+          }
+        }
+      ],
+      "incoming": [
+        {
+          "kind": "derived_from",
+          "from_turn": 1,
+          "to_turn": 2,
+          "state": "messages:00000000000000000000000000000010.0.00017371187496229012",
+          "from_state": "messages:00000000000000000000000000000008.0.652857166073468",
+          "task_ids": [],
+          "node": null,
+          "evidence": {
+            "source": "element ids recorded per version",
+            "checkpoint_id": "1f1ab311-dc7a-6e35-8008-fc6b27144ed3",
+            "step": 8,
+            "channel": "messages",
+            "version": "00000000000000000000000000000010.0.00017371187496229012",
+            "note": "channel class BinaryOperatorAggregate; all 6 element ids of the earlier version are present in this one"
+          },
+          "verdict": "verified"
+        }
+      ],
+      "outgoing": [],
+      "checkpoints": [
+        {
+          "checkpoint_id": "1f1ab311-dc78-6a82-8007-ffb6988e3d45",
+          "parent_checkpoint_id": "1f1ab311-ce5f-67e8-8006-a8aa11756dae",
+          "step": 7,
+          "source": "input",
+          "updated_channels": [
+            "__start__"
+          ],
+          "n_writes": 2,
+          "turn": 2
+        },
+        {
+          "checkpoint_id": "1f1ab311-dc7a-6e35-8008-fc6b27144ed3",
+          "parent_checkpoint_id": "1f1ab311-dc78-6a82-8007-ffb6988e3d45",
+          "step": 8,
+          "source": "loop",
+          "updated_channels": [
+            "branch:to:supervisor",
+            "messages"
+          ],
+          "n_writes": 2,
+          "turn": 2
+        },
+        {
+          "checkpoint_id": "1f1ab311-f85b-60fd-8009-bd3ebc937eb1",
+          "parent_checkpoint_id": "1f1ab311-dc7a-6e35-8008-fc6b27144ed3",
+          "step": 9,
+          "source": "loop",
+          "updated_channels": [
+            "branch:to:booking",
+            "messages"
+          ],
+          "n_writes": 2,
+          "turn": 2
+        },
+        {
+          "checkpoint_id": "1f1ab312-7647-6726-800a-3afafde42129",
+          "parent_checkpoint_id": "1f1ab311-f85b-60fd-8009-bd3ebc937eb1",
+          "step": 10,
+          "source": "loop",
+          "updated_channels": [
+            "branch:to:supervisor",
+            "messages"
+          ],
+          "n_writes": 1,
+          "turn": 2
+        },
+        {
+          "checkpoint_id": "1f1ab312-89d9-6740-800b-a2a2e9c84df0",
+          "parent_checkpoint_id": "1f1ab312-7647-6726-800a-3afafde42129",
+          "step": 11,
+          "source": "loop",
+          "updated_channels": [
+            "messages"
+          ],
+          "n_writes": 0,
+          "turn": 2
+        }
+      ]
+    }
+  ]
+}

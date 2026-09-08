@@ -275,6 +275,8 @@ class ProvenanceGraph:
                 "source": f.get("source"),
                 "updated_channels": f.get("updated_channels") or [],
                 "n_writes": len(f.get("writes") or []),
+                # the turn this checkpoint first existed in; carried through, never judged here
+                "turn": f.get("_turn"),
             }
             for f in facts
         ]

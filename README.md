@@ -53,15 +53,26 @@ Every relation carries the field it came from, and the two evidence classes are 
 
 ```bash
 firebreak trace docs/traces/tau2_task39_qwen14b_clean.jsonl        # read the capture
-firebreak provenance docs/traces/tau2_task39_qwen14b_clean.jsonl   # rebuild the provenance
+firebreak episode docs/traces/tau2_task39_qwen14b_clean.jsonl      # the episode / turn structure
+firebreak provenance docs/traces/tau2_task39_qwen14b_clean.jsonl   # the evidence underneath
 ```
 
 `trace` regroups the capture by turn and task execution and shows what each runtime source
 reported about the same execution, keeping every event's original `seq`. `provenance` writes the
 reconstruction beside the trace as `.provenance.json`, `.provenance.txt` and `.provenance.md`.
 
-The `.md` holds three Mermaid diagrams that GitHub renders with no tooling, deliberately not
-merged into one picture because they answer different questions:
+`episode` writes `.episode.md`, the structural view: the turns of the episode, the relations that
+cross between them, and one diagram per turn.
+
+```
+EpisodeGraph
+  └── TurnGraph
+        └── TaskRun
+              └── Event
+```
+
+`provenance` writes `.provenance.md` underneath it: three relation-level Mermaid diagrams, kept
+apart because they answer different questions.
 
 | diagram | relation | question |
 |---|---|---|
@@ -88,11 +99,12 @@ The graph must be compiled with a checkpointer; that is where the provenance liv
 
 ```
 firebreak/
-  tracing/       Capture: events.py, callbacks.py, recorder.py, view.py
-  provenance/    Reconstruction: capture.py, graph.py, render.py, mermaid.py
-  cli.py         firebreak trace / firebreak provenance
+  tracing/       Capture: events.py, callbacks.py, recorder.py, grouping.py, view.py
+  provenance/    Evidence: capture.py, graph.py, render.py, mermaid.py
+  episode/       Structure: graph.py (EpisodeGraph / TurnGraph), views.py
+  cli.py         firebreak trace / episode / provenance
 scripts/
-  dump_trace.py, dump_provenance.py
+  dump_trace.py, dump_episode.py, dump_provenance.py
 docs/
   PROVENANCE.md  where every relation comes from
   traces/        the canonical example

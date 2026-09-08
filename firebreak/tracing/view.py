@@ -15,6 +15,7 @@ import json
 from typing import Any, Optional
 
 from firebreak.tracing.events import Event
+from firebreak.tracing.grouping import group_by_task_run
 from firebreak.tracing.recorder import Trace
 
 STREAM_KINDS = {"node_start", "node_end", "node_error", "checkpoint"}
@@ -159,45 +160,32 @@ def render_trace(trace: Trace, source_name: str = "", show_checkpoints: bool = T
         for write in event.payload.get("writes") or []:
             writes_by_task.setdefault(write["task_id"], []).append((event, write))
 
-    # group the live events into task executions
-    runs: list[dict] = []
-    loose: list[Event] = []
-    open_run: Optional[dict] = None
-    for event in trace.events:
-        if event.kind == "checkpoint_fact":
-            continue
-        if event.kind == "node_start":
-            open_run = {"task_id": event.task_id, "node": event.node, "step": event.step,
-                        "turn": event.turn, "events": [event]}
-            runs.append(open_run)
-        elif open_run is not None and event.node == open_run["node"] and event.step == open_run["step"]:
-            open_run["events"].append(event)
-            if event.kind in ("node_end", "node_error"):
-                open_run = None
-        else:
-            loose.append(event)
+    grouped = group_by_task_run(trace)
+    runs = grouped.runs
+    loose = [e for e in grouped.unattached] + [e for e in grouped.turn_events if e.kind != "checkpoint_fact"]
+    loose.sort(key=lambda e: e.seq)
 
     last_turn = object()
     for run in runs:
-        if run["turn"] != last_turn:
-            last_turn = run["turn"]
+        if run.turn != last_turn:
+            last_turn = run.turn
             add("")
             add("=" * WIDTH)
-            add(f"TURN {run['turn']}")
+            add(f"TURN {run.turn}")
             add("=" * WIDTH)
-        seqs = [e.seq for e in run["events"]]
+        seqs = [e.seq for e in run.events]
         add("")
-        add(f"turn {run['turn']} · step {run['step']} · {run['node']} · task {run['task_id']}")
-        extras = _langgraph_extras(run["events"])
+        add(f"turn {run.turn} · step {run.step} · {run.node} · task {run.task_id or run.key}")
+        extras = _langgraph_extras(run.events)
         if extras:
             path = extras.get("path")
             add(f"  langgraph   path={path}  checkpoint_ns={extras.get('checkpoint_ns')}")
-        add(f"  captured at seq {min(seqs)}–{max(seqs)}")
+        add(f"  captured at seq {min(seqs)}–{max(seqs)}  ·  grouped by {run.identity}")
         add("")
-        for event in run["events"]:
+        for event in run.events:
             out.extend(_event_line(event))
         # what the checkpointer durably recorded about this same execution
-        recorded = writes_by_task.get(str(run["task_id"]) or "", [])
+        recorded = writes_by_task.get(str(run.task_id or ""), [])
         if recorded:
             add("")
             fact, _ = recorded[0]

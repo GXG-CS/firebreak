@@ -1074,7 +1074,8 @@
       "updated_channels": [
         "__start__"
       ],
-      "n_writes": 2
+      "n_writes": 2,
+      "turn": 0
     },
     {
       "checkpoint_id": "1f1ab311-0f97-69a1-8000-e23c1401116c",
@@ -1085,7 +1086,8 @@
         "branch:to:supervisor",
         "messages"
       ],
-      "n_writes": 1
+      "n_writes": 1,
+      "turn": 0
     },
     {
       "checkpoint_id": "1f1ab311-1cc7-6f79-8001-b6c74965b4ea",
@@ -1095,7 +1097,8 @@
       "updated_channels": [
         "messages"
       ],
-      "n_writes": 0
+      "n_writes": 0,
+      "turn": 0
     },
     {
       "checkpoint_id": "1f1ab311-2193-6ae2-8002-4df9473dfe1e",
@@ -1105,7 +1108,8 @@
       "updated_channels": [
         "__start__"
       ],
-      "n_writes": 2
+      "n_writes": 2,
+      "turn": 1
     },
     {
       "checkpoint_id": "1f1ab311-2196-6e3a-8003-8ce35a02028a",
@@ -1116,7 +1120,8 @@
         "branch:to:supervisor",
         "messages"
       ],
-      "n_writes": 2
+      "n_writes": 2,
+      "turn": 1
     },
     {
       "checkpoint_id": "1f1ab311-2f4b-6573-8004-5da1dda42928",
@@ -1127,7 +1132,8 @@
         "branch:to:lookup",
         "messages"
       ],
-      "n_writes": 2
+      "n_writes": 2,
+      "turn": 1
     },
     {
       "checkpoint_id": "1f1ab311-b7dc-6a2d-8005-a9d0577e152b",
@@ -1138,7 +1144,8 @@
         "branch:to:supervisor",
         "messages"
       ],
-      "n_writes": 1
+      "n_writes": 1,
+      "turn": 1
     },
     {
       "checkpoint_id": "1f1ab311-ce5f-67e8-8006-a8aa11756dae",
@@ -1148,7 +1155,8 @@
       "updated_channels": [
         "messages"
       ],
-      "n_writes": 0
+      "n_writes": 0,
+      "turn": 1
     },
     {
       "checkpoint_id": "1f1ab311-dc78-6a82-8007-ffb6988e3d45",
@@ -1158,7 +1166,8 @@
       "updated_channels": [
         "__start__"
       ],
-      "n_writes": 2
+      "n_writes": 2,
+      "turn": 2
     },
     {
       "checkpoint_id": "1f1ab311-dc7a-6e35-8008-fc6b27144ed3",
@@ -1169,7 +1178,8 @@
         "branch:to:supervisor",
         "messages"
       ],
-      "n_writes": 2
+      "n_writes": 2,
+      "turn": 2
     },
     {
       "checkpoint_id": "1f1ab311-f85b-60fd-8009-bd3ebc937eb1",
@@ -1180,7 +1190,8 @@
         "branch:to:booking",
         "messages"
       ],
-      "n_writes": 2
+      "n_writes": 2,
+      "turn": 2
     },
     {
       "checkpoint_id": "1f1ab312-7647-6726-800a-3afafde42129",
@@ -1191,7 +1202,8 @@
         "branch:to:supervisor",
         "messages"
       ],
-      "n_writes": 1
+      "n_writes": 1,
+      "turn": 2
     },
     {
       "checkpoint_id": "1f1ab312-89d9-6740-800b-a2a2e9c84df0",
@@ -1201,7 +1213,8 @@
       "updated_channels": [
         "messages"
       ],
-      "n_writes": 0
+      "n_writes": 0,
+      "turn": 2
     }
   ],
   "warnings": [],

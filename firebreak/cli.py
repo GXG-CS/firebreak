@@ -2,7 +2,8 @@
 
 Current:
     firebreak trace <trace.jsonl>        read a capture, source by source
-    firebreak provenance <trace.jsonl>   rebuild provenance from a capture
+    firebreak episode <trace.jsonl>      the episode / turn hierarchy
+    firebreak provenance <trace.jsonl>   the relation-level evidence underneath it
 
 Legacy (the earlier cascade work, kept and still tested, not the current line):
     firebreak run <example.py>
@@ -75,6 +76,18 @@ def _cmd_provenance(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_episode(args: argparse.Namespace) -> int:
+    """Project a capture into the episode / turn hierarchy."""
+    from scripts.dump_episode import dump  # noqa: PLC0415 - the script owns the output layout
+
+    written = dump(Path(args.trace), with_json=args.json)
+    print(f"{args.trace}  ->  {', '.join(w.name for w in written)}")
+    if not args.quiet:
+        print()
+        print(written[0].read_text())
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="firebreak",
@@ -88,7 +101,13 @@ def build_parser() -> argparse.ArgumentParser:
     trace.add_argument("--no-checkpoints", action="store_true", help="omit the checkpointer ledger")
     trace.set_defaults(func=_cmd_trace)
 
-    prov = sub.add_parser("provenance", help="rebuild provenance from a capture (.provenance.json / .txt / .md)")
+    ep = sub.add_parser("episode", help="project a capture into the episode / turn hierarchy (.episode.md)")
+    ep.add_argument("trace", help="path to a JSONL trace")
+    ep.add_argument("--json", action="store_true", help="also write <trace>.episode.json")
+    ep.add_argument("--quiet", action="store_true", help="write the files without printing them")
+    ep.set_defaults(func=_cmd_episode)
+
+    prov = sub.add_parser("provenance", help="rebuild the relation-level evidence (.provenance.json / .txt / .md)")
     prov.add_argument("trace", help="path to a JSONL trace")
     prov.add_argument("--quiet", action="store_true", help="write the files without printing them")
     prov.add_argument("--legacy-audit", action="store_true", help="also check the legacy execution graph against the recorded relations")

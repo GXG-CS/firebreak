@@ -17,6 +17,9 @@ Done:
 * Observed and derived evidence kept apart; derivations checked against recorded element
   identities rather than assumed from the channel class.
 * Task identity taken from the trace, not from who happened to write.
+* An explicit hierarchy over the evidence: `EpisodeGraph -> TurnGraph -> TaskRun -> Event`, with
+  turn-local slicing and cross-turn relations preserved at the boundary.
+* Task-run grouping by recorded identity, correct when a super-step fans out.
 
 Open, in the order they matter:
 
