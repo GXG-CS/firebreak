@@ -52,12 +52,25 @@ Every relation carries the field it came from, and the two evidence classes are 
 ## Try it
 
 ```bash
-python scripts/dump_provenance.py docs/traces/tau2_task39_qwen14b_clean.jsonl
+firebreak trace docs/traces/tau2_task39_qwen14b_clean.jsonl        # read the capture
+firebreak provenance docs/traces/tau2_task39_qwen14b_clean.jsonl   # rebuild the provenance
 ```
 
-That reads the canonical capture in `docs/traces/` and writes the reconstruction beside it. The
-run behind it is τ²-bench airline task 39 with a Supervisor + Lookup + Booking team on a local
-Qwen2.5-14B; see `docs/traces/README.md`.
+`trace` regroups the capture by turn and task execution and shows what each runtime source
+reported about the same execution, keeping every event's original `seq`. `provenance` writes the
+reconstruction beside the trace as `.provenance.json`, `.provenance.txt` and `.provenance.md`.
+
+The `.md` holds three Mermaid diagrams that GitHub renders with no tooling, deliberately not
+merged into one picture because they answer different questions:
+
+| diagram | relation | question |
+|---|---|---|
+| Data flow | `WRITE` / `READ` | which task produced the value another task was handed |
+| State lineage | `DERIVED_FROM` | whether a later version of a channel still contains an earlier one |
+| Control flow | `TRIGGER` | what caused each task to be scheduled |
+
+The run behind the canonical example is τ²-bench airline task 39 with a Supervisor + Lookup +
+Booking team on a local Qwen2.5-14B; see `docs/traces/README.md`.
 
 To capture a run of your own, record it instead of invoking it:
 
@@ -75,10 +88,11 @@ The graph must be compiled with a checkpointer; that is where the provenance liv
 
 ```
 firebreak/
-  tracing/       Capture: events.py, callbacks.py, recorder.py
-  provenance/    Reconstruction: capture.py, graph.py, render.py
+  tracing/       Capture: events.py, callbacks.py, recorder.py, view.py
+  provenance/    Reconstruction: capture.py, graph.py, render.py, mermaid.py
+  cli.py         firebreak trace / firebreak provenance
 scripts/
-  dump_provenance.py
+  dump_trace.py, dump_provenance.py
 docs/
   PROVENANCE.md  where every relation comes from
   traces/        the canonical example

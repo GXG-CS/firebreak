@@ -4,7 +4,7 @@
       "task_id": "069afb78-c334-0254-dcb0-96cccd5abc8b",
       "node": "__input__",
       "step": -1,
-      "turn": null,
+      "turn": 0,
       "invoke_id": null,
       "triggers": [],
       "checkpoint_ns": "",
@@ -16,7 +16,7 @@
       "resolution": "checkpoint_writes",
       "wrote": true,
       "outcome": null,
-      "label": "__input__@-1"
+      "label": "__input__@-1 (turn 0)"
     },
     {
       "task_id": "f80c8b4c-eb29-9dcd-b166-f4fa5c848c8d",
@@ -47,7 +47,7 @@
       "task_id": "3266dae1-93da-26e3-adac-668564ab4dbe",
       "node": "__input__",
       "step": 2,
-      "turn": null,
+      "turn": 1,
       "invoke_id": null,
       "triggers": [],
       "checkpoint_ns": "",
@@ -59,7 +59,7 @@
       "resolution": "checkpoint_writes",
       "wrote": true,
       "outcome": null,
-      "label": "__input__@2"
+      "label": "__input__@2 (turn 1)"
     },
     {
       "task_id": "5ab04f19-da84-0a55-42ca-169f58cb369a",
@@ -140,7 +140,7 @@
       "task_id": "4b1b4a94-cf51-6e79-1ae1-54a0ca3b3489",
       "node": "__input__",
       "step": 7,
-      "turn": null,
+      "turn": 2,
       "invoke_id": null,
       "triggers": [],
       "checkpoint_ns": "",
@@ -152,7 +152,7 @@
       "resolution": "checkpoint_writes",
       "wrote": true,
       "outcome": null,
-      "label": "__input__@7"
+      "label": "__input__@7 (turn 2)"
     },
     {
       "task_id": "53361bbb-60de-1ec0-3e54-2cb20c574969",

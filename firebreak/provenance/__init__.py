@@ -14,6 +14,12 @@ from firebreak.provenance.graph import (
     TaskRunRef,
     WriteRelation,
 )
+from firebreak.provenance.mermaid import (
+    control_flow,
+    data_flow,
+    render_markdown,
+    state_lineage,
+)
 from firebreak.provenance.render import (
     compare_with_legacy,
     render_comparison,
@@ -30,7 +36,11 @@ __all__ = [
     "TaskRunRef",
     "WriteRelation",
     "compare_with_legacy",
+    "control_flow",
+    "data_flow",
     "render_comparison",
+    "render_markdown",
+    "state_lineage",
     "render_json",
     "render_text",
     "snapshot_checkpoints",

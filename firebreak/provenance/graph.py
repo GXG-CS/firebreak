@@ -253,7 +253,17 @@ class ProvenanceGraph:
 
     @staticmethod
     def _load_checkpoints(trace: Trace) -> list[dict]:
-        facts = [e.payload for e in trace.of_kind(CHECKPOINT_FACT)]
+        """Checkpoint payloads, oldest first, each carrying the turn it was first captured in.
+
+        A snapshot re-lists the whole thread but skips checkpoints already recorded, so a
+        `checkpoint_fact` event's turn is the turn during which that checkpoint first existed.
+        That is how LangGraph's own input task gets placed in a turn rather than in none.
+        """
+        facts = []
+        for event in trace.of_kind(CHECKPOINT_FACT):
+            payload = dict(event.payload)
+            payload.setdefault("_turn", event.turn)
+            facts.append(payload)
         return sorted(facts, key=lambda f: str(f.get("checkpoint_id") or ""))
 
     def _build(self, facts: list[dict]) -> None:
@@ -365,7 +375,7 @@ class ProvenanceGraph:
         if run is None:
             # not in the trace: LangGraph's own input write, named by the checkpoint's source
             node = "__input__" if fact.get("source") == "input" else "__unknown__"
-            run = TaskRunRef(task_id=task_id, node=node, step=fact.get("step"))
+            run = TaskRunRef(task_id=task_id, node=node, step=fact.get("step"), turn=fact.get("_turn"))
             self.tasks[task_id] = run
         run.from_checkpoint = True
         run.checkpoint_ns = run.checkpoint_ns if run.checkpoint_ns is not None else fact.get("checkpoint_ns")

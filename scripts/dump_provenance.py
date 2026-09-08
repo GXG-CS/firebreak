@@ -5,6 +5,8 @@
 Writes, next to each input trace:
   <trace>.provenance.json     tasks, state versions, relations, every one with its evidence
   <trace>.provenance.txt      the same, readable, plus what the model cannot express yet
+  <trace>.provenance.md       three Mermaid diagrams (data flow, state lineage, control flow),
+                              which GitHub renders with no tooling
 
 `--legacy-audit` additionally writes <trace>.legacy_audit.txt, which checks the old
 static-edge-plus-ordering heuristic in `firebreak/graph/` against the recorded relations. That
@@ -20,6 +22,7 @@ import argparse
 from pathlib import Path
 
 from firebreak.provenance.graph import ProvenanceGraph
+from firebreak.provenance.mermaid import render_markdown
 from firebreak.provenance.render import (
     compare_with_legacy,
     render_comparison,
@@ -36,9 +39,11 @@ def dump(path: Path, legacy_audit: bool = False) -> list[Path]:
     stem = path.with_suffix("")
     json_path = Path(f"{stem}.provenance.json")
     text_path = Path(f"{stem}.provenance.txt")
+    md_path = Path(f"{stem}.provenance.md")
     json_path.write_text(render_json(prov, trace))
     text_path.write_text(render_text(prov, trace, source_name=path.name))
-    written = [json_path, text_path]
+    md_path.write_text(render_markdown(prov, trace, source_name=path.name))
+    written = [json_path, text_path, md_path]
 
     if legacy_audit:
         from firebreak.graph.execution import ExecutionGraph  # legacy, imported only on demand

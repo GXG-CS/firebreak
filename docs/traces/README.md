@@ -8,11 +8,14 @@ Qwen2.5-14B-Instruct served locally with vLLM. The task succeeds (τ² reward 1.
 | `tau2_task39_qwen14b_clean.jsonl` | Capture | the raw Firebreak trace: every runtime fact recorded during the run |
 | `tau2_task39_qwen14b_clean.provenance.json` | Reconstruction | machine-readable provenance: tasks, state versions, relations, each with its evidence |
 | `tau2_task39_qwen14b_clean.provenance.txt` | Reconstruction | the same, readable, plus what the model cannot express |
+| `tau2_task39_qwen14b_clean.provenance.md` | Reconstruction | three Mermaid diagrams: data flow, state lineage, control flow (GitHub renders them) |
+| `tau2_task39_qwen14b_clean.capture.txt` | Capture | the capture read back source by source, grouped by task execution |
 
-Regenerate the reconstruction from the capture:
+Regenerate both views from the capture:
 
 ```bash
-python scripts/dump_provenance.py docs/traces/tau2_task39_qwen14b_clean.jsonl
+firebreak trace docs/traces/tau2_task39_qwen14b_clean.jsonl --out
+firebreak provenance docs/traces/tau2_task39_qwen14b_clean.jsonl --quiet
 ```
 
 Earlier artifacts (the legacy execution-graph dumps, the legacy audit, the fault-injection run)

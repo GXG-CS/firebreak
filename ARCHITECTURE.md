@@ -14,6 +14,7 @@ debug/tasks    callbacks     checkpointer
        events.py     Event, JSON-safe truncation, routing-channel test
        callbacks.py  tool / model / node-scoped events, attributed via langgraph_* metadata
        recorder.py   record(): runs the graph, merges both streams, snapshots the checkpointer
+       view.py       the capture read back, regrouped by turn and task execution
                   ▼
                 Trace          an ordered list of Events + run metadata, one .jsonl file
                   ▼
@@ -21,6 +22,7 @@ debug/tasks    callbacks     checkpointer
        capture.py    snapshot_checkpoints(): checkpoint records -> `checkpoint_fact` events
        graph.py      ProvenanceGraph: TaskRun -> StateVersion -> TaskRun, every relation with evidence
        render.py     .provenance.json and .provenance.txt
+       mermaid.py    .provenance.md: data flow, state lineage and control flow, kept separate
                   ▼
             ProvenanceGraph
 ```

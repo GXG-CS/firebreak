@@ -1,0 +1,378 @@
+# Capture — tau2_task39_qwen14b_clean.jsonl
+
+Three runtime sources, one trace. Grouped by turn and task execution, not by file order:
+  STREAM        graph.stream(debug): node runs, their triggers, input state and writes
+  CALLBACK      chain / model / tool calls, attributed to the node run that made them
+  CHECKPOINTER  durable records, snapshotted after each invoke, so their file position
+                is not when they came to be. Every line keeps its original seq.
+
+episode tau2-39-7e8e66  thread tau2-39-7e8e66  task 39  model openai  outcome PASSED
+106 events over 3 turns, 3 invokes, 37.7s
+
+
+================================================================================================
+TURN 0
+================================================================================================
+
+turn 0 · step 1 · supervisor · task f80c8b4c-eb29-9dcd-b166-f4fa5c848c8d
+  langgraph   path=['__pregel_pull', 'supervisor']  checkpoint_ns=supervisor:f80c8b4c-eb29-9dcd-b166-f4fa5c848c8d
+  captured at seq 3–10
+
+  STREAM       node_start    supervisor                  seq 3
+                 triggers   branch:to:supervisor
+                 input      messages[1]
+  CALLBACK     chain_start   supervisor                  seq 4
+  CALLBACK     llm_start     ChatOpenAI                  seq 5
+                 prompt     2 messages: system, human
+  CALLBACK     llm_end       ChatOpenAI                  seq 6
+                 reply      1 messages: ai
+  CALLBACK     chain_start   route                       seq 7
+  CALLBACK     chain_end     route                       seq 8
+  CALLBACK     chain_end     supervisor                  seq 9
+  STREAM       node_end      supervisor                  seq 10
+                 writes     messages[1]
+
+  CHECKPOINTER  durable record of this execution                    seq 13 (snapshotted later)
+               scheduled from  checkpoint 1f1ab311-0f97… step 0
+               wrote           messages               sha1 c72b61dec33a
+               produced        messages=v3  (in checkpoint 1f1ab311-1cc7… step 1)
+
+================================================================================================
+TURN 1
+================================================================================================
+
+turn 1 · step 4 · supervisor · task 5ab04f19-da84-0a55-42ca-169f58cb369a
+  langgraph   path=['__pregel_pull', 'supervisor']  checkpoint_ns=supervisor:5ab04f19-da84-0a55-42ca-169f58cb369a
+  captured at seq 17–24
+
+  STREAM       node_start    supervisor                  seq 17
+                 triggers   branch:to:supervisor
+                 input      messages[3]
+  CALLBACK     chain_start   supervisor                  seq 18
+  CALLBACK     llm_start     ChatOpenAI                  seq 19
+                 prompt     4 messages: system, human, ai, human
+  CALLBACK     llm_end       ChatOpenAI                  seq 20
+                 reply      1 messages: ai+1tc
+  CALLBACK     chain_start   route                       seq 21
+  CALLBACK     chain_end     route                       seq 22
+  CALLBACK     chain_end     supervisor                  seq 23
+  STREAM       node_end      supervisor                  seq 24
+                 writes     messages[1]
+
+  CHECKPOINTER  durable record of this execution                    seq 63 (snapshotted later)
+               scheduled from  checkpoint 1f1ab311-2196… step 3
+               wrote           messages               sha1 abd553bbbf71
+               wrote           branch:to:lookup       sha1 2be88ca4242c
+               produced        messages=v6 · branch:to:lookup=v6  (in checkpoint 1f1ab311-2f4b… step 4)
+
+turn 1 · step 5 · lookup · task 2a0cbb7b-e3af-43f8-925c-7f9b3bf7636c
+  langgraph   path=['__pregel_pull', 'lookup']  checkpoint_ns=lookup:2a0cbb7b-e3af-43f8-925c-7f9b3bf7636c
+  captured at seq 26–51
+
+  STREAM       node_start    lookup                      seq 26
+                 triggers   branch:to:lookup
+                 input      messages[4]
+  CALLBACK     chain_start   lookup                      seq 27
+  CALLBACK     llm_start     ChatOpenAI                  seq 28
+                 prompt     2 messages: system, human
+  CALLBACK     llm_end       ChatOpenAI                  seq 29
+                 reply      1 messages: ai+1tc
+  CALLBACK     tool_start    get_user_details            seq 30
+                 args       {"user_id": "amelia_davis_8890"}
+  CALLBACK     tool_end      get_user_details            seq 31
+                 result     { "user_id": "amelia_davis_8890", "name": { "first_name": "Am…
+  CALLBACK     llm_start     ChatOpenAI                  seq 32
+                 prompt     4 messages: system, human, ai+1tc, tool
+  CALLBACK     llm_end       ChatOpenAI                  seq 33
+                 reply      1 messages: ai+7tc
+  CALLBACK     tool_start    get_reservation_details     seq 34
+                 args       {"reservation_id": "8C8K4E"}
+  CALLBACK     tool_end      get_reservation_details     seq 35
+                 result     { "reservation_id": "8C8K4E", "user_id": "amelia_davis_8890",…
+  CALLBACK     tool_start    get_reservation_details     seq 36
+                 args       {"reservation_id": "UDMOP1"}
+  CALLBACK     tool_end      get_reservation_details     seq 37
+                 result     { "reservation_id": "UDMOP1", "user_id": "amelia_davis_8890",…
+  CALLBACK     tool_start    get_reservation_details     seq 38
+                 args       {"reservation_id": "XAZ3C0"}
+  CALLBACK     tool_end      get_reservation_details     seq 39
+                 result     { "reservation_id": "XAZ3C0", "user_id": "amelia_davis_8890",…
+  CALLBACK     tool_start    get_reservation_details     seq 40
+                 args       {"reservation_id": "LU15PA"}
+  CALLBACK     tool_end      get_reservation_details     seq 41
+                 result     { "reservation_id": "LU15PA", "user_id": "amelia_davis_8890",…
+  CALLBACK     tool_start    get_reservation_details     seq 42
+                 args       {"reservation_id": "MSJ4OA"}
+  CALLBACK     tool_end      get_reservation_details     seq 43
+                 result     { "reservation_id": "MSJ4OA", "user_id": "amelia_davis_8890",…
+  CALLBACK     tool_start    get_reservation_details     seq 44
+                 args       {"reservation_id": "I6M8JQ"}
+  CALLBACK     tool_end      get_reservation_details     seq 45
+                 result     { "reservation_id": "I6M8JQ", "user_id": "amelia_davis_8890",…
+  CALLBACK     tool_start    get_reservation_details     seq 46
+                 args       {"reservation_id": "4XGCCM"}
+  CALLBACK     tool_end      get_reservation_details     seq 47
+                 result     { "reservation_id": "4XGCCM", "user_id": "amelia_davis_8890",…
+  CALLBACK     llm_start     ChatOpenAI                  seq 48
+                 prompt     12 messages: system, human, ai+1tc, tool, ai+7tc, tool, tool, tool, tool, tool, tool, tool
+  CALLBACK     llm_end       ChatOpenAI                  seq 49
+                 reply      1 messages: ai
+  CALLBACK     chain_end     lookup                      seq 50
+  STREAM       node_end      lookup                      seq 51
+                 writes     messages[1]
+
+  CHECKPOINTER  durable record of this execution                    seq 64 (snapshotted later)
+               scheduled from  checkpoint 1f1ab311-2f4b… step 4
+               wrote           messages               sha1 f36c251d8fce
+               wrote           branch:to:supervisor   sha1 2be88ca4242c
+               produced        messages=v7 · branch:to:supervisor=v7  (in checkpoint 1f1ab311-b7dc… step 5)
+
+turn 1 · step 6 · supervisor · task bd54dc0f-991a-4919-e7c1-d91f4fca2044
+  langgraph   path=['__pregel_pull', 'supervisor']  checkpoint_ns=supervisor:bd54dc0f-991a-4919-e7c1-d91f4fca2044
+  captured at seq 53–60
+
+  STREAM       node_start    supervisor                  seq 53
+                 triggers   branch:to:supervisor
+                 input      messages[5]
+  CALLBACK     chain_start   supervisor                  seq 54
+  CALLBACK     llm_start     ChatOpenAI                  seq 55
+                 prompt     6 messages: system, human, ai, human, ai+1tc, tool
+  CALLBACK     llm_end       ChatOpenAI                  seq 56
+                 reply      1 messages: ai
+  CALLBACK     chain_start   route                       seq 57
+  CALLBACK     chain_end     route                       seq 58
+  CALLBACK     chain_end     supervisor                  seq 59
+  STREAM       node_end      supervisor                  seq 60
+                 writes     messages[1]
+
+  CHECKPOINTER  durable record of this execution                    seq 65 (snapshotted later)
+               scheduled from  checkpoint 1f1ab311-b7dc… step 5
+               wrote           messages               sha1 d8d45ee030fd
+               produced        messages=v8  (in checkpoint 1f1ab311-ce5f… step 6)
+
+================================================================================================
+TURN 2
+================================================================================================
+
+turn 2 · step 9 · supervisor · task 53361bbb-60de-1ec0-3e54-2cb20c574969
+  langgraph   path=['__pregel_pull', 'supervisor']  checkpoint_ns=supervisor:53361bbb-60de-1ec0-3e54-2cb20c574969
+  captured at seq 69–76
+
+  STREAM       node_start    supervisor                  seq 69
+                 triggers   branch:to:supervisor
+                 input      messages[7]
+  CALLBACK     chain_start   supervisor                  seq 70
+  CALLBACK     llm_start     ChatOpenAI                  seq 71
+                 prompt     8 messages: system, human, ai, human, ai+1tc, tool, ai, human
+  CALLBACK     llm_end       ChatOpenAI                  seq 72
+                 reply      1 messages: ai+1tc
+  CALLBACK     chain_start   route                       seq 73
+  CALLBACK     chain_end     route                       seq 74
+  CALLBACK     chain_end     supervisor                  seq 75
+  STREAM       node_end      supervisor                  seq 76
+                 writes     messages[1]
+
+  CHECKPOINTER  durable record of this execution                    seq 103 (snapshotted later)
+               scheduled from  checkpoint 1f1ab311-dc7a… step 8
+               wrote           messages               sha1 fcf3d18c4687
+               wrote           branch:to:booking      sha1 2be88ca4242c
+               produced        messages=v11 · branch:to:booking=v11  (in checkpoint 1f1ab311-f85b… step 9)
+
+turn 2 · step 10 · booking · task 5ce1baa6-855e-44bb-9133-be97eba7e992
+  langgraph   path=['__pregel_pull', 'booking']  checkpoint_ns=booking:5ce1baa6-855e-44bb-9133-be97eba7e992
+  captured at seq 78–91
+
+  STREAM       node_start    booking                     seq 78
+                 triggers   branch:to:booking
+                 input      messages[8]
+  CALLBACK     chain_start   booking                     seq 79
+  CALLBACK     llm_start     ChatOpenAI                  seq 80
+                 prompt     2 messages: system, human
+  CALLBACK     llm_end       ChatOpenAI                  seq 81
+                 reply      1 messages: ai+3tc
+  CALLBACK     tool_start    cancel_reservation          seq 82
+                 args       {"reservation_id": "8C8K4E"}
+  CALLBACK     tool_end      cancel_reservation          seq 83
+                 result     { "reservation_id": "8C8K4E", "user_id": "amelia_davis_8890",…
+  CALLBACK     tool_start    cancel_reservation          seq 84
+                 args       {"reservation_id": "LU15PA"}
+  CALLBACK     tool_end      cancel_reservation          seq 85
+                 result     { "reservation_id": "LU15PA", "user_id": "amelia_davis_8890",…
+  CALLBACK     tool_start    cancel_reservation          seq 86
+                 args       {"reservation_id": "MSJ4OA"}
+  CALLBACK     tool_end      cancel_reservation          seq 87
+                 result     { "reservation_id": "MSJ4OA", "user_id": "amelia_davis_8890",…
+  CALLBACK     llm_start     ChatOpenAI                  seq 88
+                 prompt     6 messages: system, human, ai+3tc, tool, tool, tool
+  CALLBACK     llm_end       ChatOpenAI                  seq 89
+                 reply      1 messages: ai
+  CALLBACK     chain_end     booking                     seq 90
+  STREAM       node_end      booking                     seq 91
+                 writes     messages[1]
+
+  CHECKPOINTER  durable record of this execution                    seq 104 (snapshotted later)
+               scheduled from  checkpoint 1f1ab311-f85b… step 9
+               wrote           messages               sha1 3fa500b1b237
+               wrote           branch:to:supervisor   sha1 2be88ca4242c
+               produced        messages=v12 · branch:to:supervisor=v12  (in checkpoint 1f1ab312-7647… step 10)
+
+turn 2 · step 11 · supervisor · task aba3c0ce-49bc-14cb-60b6-a2c5a62d8d25
+  langgraph   path=['__pregel_pull', 'supervisor']  checkpoint_ns=supervisor:aba3c0ce-49bc-14cb-60b6-a2c5a62d8d25
+  captured at seq 93–100
+
+  STREAM       node_start    supervisor                  seq 93
+                 triggers   branch:to:supervisor
+                 input      messages[9]
+  CALLBACK     chain_start   supervisor                  seq 94
+  CALLBACK     llm_start     ChatOpenAI                  seq 95
+                 prompt     10 messages: system, human, ai, human, ai+1tc, tool, ai, human, ai+1tc, tool
+  CALLBACK     llm_end       ChatOpenAI                  seq 96
+                 reply      1 messages: ai
+  CALLBACK     chain_start   route                       seq 97
+  CALLBACK     chain_end     route                       seq 98
+  CALLBACK     chain_end     supervisor                  seq 99
+  STREAM       node_end      supervisor                  seq 100
+                 writes     messages[1]
+
+  CHECKPOINTER  durable record of this execution                    seq 105 (snapshotted later)
+               scheduled from  checkpoint 1f1ab312-7647… step 10
+               wrote           messages               sha1 b3eb0a87730e
+               produced        messages=v13  (in checkpoint 1f1ab312-89d9… step 11)
+
+================================================================================================
+EVENTS OUTSIDE A TASK EXECUTION
+================================================================================================
+
+  STREAM       checkpoint                                seq 1
+                 next       __start__
+                 state keys messages
+  STREAM       checkpoint                                seq 2
+                 next       supervisor
+                 state keys messages
+  STREAM       checkpoint                                seq 11
+                 next       -
+                 state keys messages
+  STREAM       checkpoint                                seq 15
+                 next       __start__
+                 state keys messages
+  STREAM       checkpoint                                seq 16
+                 next       supervisor
+                 state keys messages
+  STREAM       checkpoint                                seq 25
+                 next       lookup
+                 state keys messages
+  STREAM       checkpoint                                seq 52
+                 next       supervisor
+                 state keys messages
+  STREAM       checkpoint                                seq 61
+                 next       -
+                 state keys messages
+  STREAM       checkpoint                                seq 67
+                 next       __start__
+                 state keys messages
+  STREAM       checkpoint                                seq 68
+                 next       supervisor
+                 state keys messages
+  STREAM       checkpoint                                seq 77
+                 next       booking
+                 state keys messages
+  STREAM       checkpoint                                seq 92
+                 next       supervisor
+                 state keys messages
+  STREAM       checkpoint                                seq 101
+                 next       -
+                 state keys messages
+
+================================================================================================
+CHECKPOINTER LEDGER
+================================================================================================
+
+Snapshotted after each invoke. This is the record the provenance is rebuilt from.
+
+checkpoint 1f1ab311-0f94-6c9c-bfff-ee5133dc19cc  step -1  source input                seq 12
+  versions   __start__=v1
+  seen       __input__{-}
+  updated    __start__
+  writes     069afb78…→messages · 069afb78…→branch:to:supervisor
+
+checkpoint 1f1ab311-0f97-69a1-8000-e23c1401116c  step 0  source loop                seq 13
+  versions   __start__=v2 · messages=v2 · branch:to:supervisor=v2
+  seen       __input__{-} · __start__{__start__=v1}
+  updated    branch:to:supervisor, messages
+  writes     f80c8b4c…→messages
+  elements   messages: 1 ids recorded
+
+checkpoint 1f1ab311-1cc7-6f79-8001-b6c74965b4ea  step 1  source loop                seq 14
+  versions   __start__=v2 · messages=v3 · branch:to:supervisor=v3
+  seen       __input__{-} · __start__{__start__=v1} · supervisor{branch:to:supervisor=v2}
+  updated    messages
+  elements   messages: 2 ids recorded
+
+checkpoint 1f1ab311-2193-6ae2-8002-4df9473dfe1e  step 2  source input                seq 62
+  versions   __start__=v4 · messages=v3 · branch:to:supervisor=v3
+  seen       __input__{-} · __start__{__start__=v1} · supervisor{branch:to:supervisor=v2}
+  updated    __start__
+  writes     3266dae1…→messages · 3266dae1…→branch:to:supervisor
+  elements   messages: 2 ids recorded
+
+checkpoint 1f1ab311-2196-6e3a-8003-8ce35a02028a  step 3  source loop                seq 63
+  versions   __start__=v5 · messages=v5 · branch:to:supervisor=v5
+  seen       __input__{-} · __start__{__start__=v4} · supervisor{branch:to:supervisor=v2}
+  updated    branch:to:supervisor, messages
+  writes     5ab04f19…→messages · 5ab04f19…→branch:to:lookup
+  elements   messages: 3 ids recorded
+
+checkpoint 1f1ab311-2f4b-6573-8004-5da1dda42928  step 4  source loop                seq 64
+  versions   __start__=v5 · messages=v6 · branch:to:supervisor=v6 · branch:to:lookup=v6
+  seen       __input__{-} · __start__{__start__=v4} · supervisor{branch:to:supervisor=v5}
+  updated    branch:to:lookup, messages
+  writes     2a0cbb7b…→messages · 2a0cbb7b…→branch:to:supervisor
+  elements   messages: 4 ids recorded
+
+checkpoint 1f1ab311-b7dc-6a2d-8005-a9d0577e152b  step 5  source loop                seq 65
+  versions   __start__=v5 · messages=v7 · branch:to:supervisor=v7 · branch:to:lookup=v7
+  seen       __input__{-} · __start__{__start__=v4} · supervisor{branch:to:supervisor=v5} · lookup{branch:to:lookup=v6}
+  updated    branch:to:supervisor, messages
+  writes     bd54dc0f…→messages
+  elements   messages: 5 ids recorded
+
+checkpoint 1f1ab311-ce5f-67e8-8006-a8aa11756dae  step 6  source loop                seq 66
+  versions   __start__=v5 · messages=v8 · branch:to:supervisor=v8 · branch:to:lookup=v7
+  seen       __input__{-} · __start__{__start__=v4} · supervisor{branch:to:supervisor=v7} · lookup{branch:to:lookup=v6}
+  updated    messages
+  elements   messages: 6 ids recorded
+
+checkpoint 1f1ab311-dc78-6a82-8007-ffb6988e3d45  step 7  source input                seq 102
+  versions   __start__=v9 · messages=v8 · branch:to:supervisor=v8 · branch:to:lookup=v7
+  seen       __input__{-} · __start__{__start__=v4} · supervisor{branch:to:supervisor=v7} · lookup{branch:to:lookup=v6}
+  updated    __start__
+  writes     4b1b4a94…→messages · 4b1b4a94…→branch:to:supervisor
+  elements   messages: 6 ids recorded
+
+checkpoint 1f1ab311-dc7a-6e35-8008-fc6b27144ed3  step 8  source loop                seq 103
+  versions   __start__=v10 · messages=v10 · branch:to:supervisor=v10 · branch:to:lookup=v7
+  seen       __input__{-} · __start__{__start__=v9} · supervisor{branch:to:supervisor=v7} · lookup{branch:to:lookup=v6}
+  updated    branch:to:supervisor, messages
+  writes     53361bbb…→messages · 53361bbb…→branch:to:booking
+  elements   messages: 7 ids recorded
+
+checkpoint 1f1ab311-f85b-60fd-8009-bd3ebc937eb1  step 9  source loop                seq 104
+  versions   __start__=v10 · messages=v11 · branch:to:supervisor=v11 · branch:to:lookup=v7 · branch:to:booking=v11
+  seen       __input__{-} · __start__{__start__=v9} · supervisor{branch:to:supervisor=v10} · lookup{branch:to:lookup=v6}
+  updated    branch:to:booking, messages
+  writes     5ce1baa6…→messages · 5ce1baa6…→branch:to:supervisor
+  elements   messages: 8 ids recorded
+
+checkpoint 1f1ab312-7647-6726-800a-3afafde42129  step 10  source loop                seq 105
+  versions   __start__=v10 · messages=v12 · branch:to:supervisor=v12 · branch:to:lookup=v7 · branch:to:booking=v12
+  seen       __input__{-} · __start__{__start__=v9} · supervisor{branch:to:supervisor=v10} · lookup{branch:to:lookup=v6} · booking{branch:to:booking=v11}
+  updated    branch:to:supervisor, messages
+  writes     aba3c0ce…→messages
+  elements   messages: 9 ids recorded
+
+checkpoint 1f1ab312-89d9-6740-800b-a2a2e9c84df0  step 11  source loop                seq 106
+  versions   __start__=v10 · messages=v13 · branch:to:supervisor=v13 · branch:to:lookup=v7 · branch:to:booking=v12
+  seen       __input__{-} · __start__{__start__=v9} · supervisor{branch:to:supervisor=v12} · lookup{branch:to:lookup=v6} · booking{branch:to:booking=v11}
+  updated    messages
+  elements   messages: 10 ids recorded
+

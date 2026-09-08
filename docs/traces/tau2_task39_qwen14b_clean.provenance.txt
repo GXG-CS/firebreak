@@ -45,13 +45,13 @@ Two kinds of read, kept apart because LangGraph records them differently:
 ## Task runs
 
   label                      task_id                                  turn  step wrote  outcome    placed by         triggers
-  __input__@-1               069afb78-c334-0254-dcb0-96cccd5abc8b     None    -1 yes    -          checkpoint_writes -
+  __input__@-1 (turn 0)      069afb78-c334-0254-dcb0-96cccd5abc8b        0    -1 yes    -          checkpoint_writes -
   supervisor@1 (turn 0)      f80c8b4c-eb29-9dcd-b166-f4fa5c848c8d        0     1 yes    -          checkpoint_writes branch:to:supervisor
-  __input__@2                3266dae1-93da-26e3-adac-668564ab4dbe     None     2 yes    -          checkpoint_writes -
+  __input__@2 (turn 1)       3266dae1-93da-26e3-adac-668564ab4dbe        1     2 yes    -          checkpoint_writes -
   supervisor@4 (turn 1)      5ab04f19-da84-0a55-42ca-169f58cb369a        1     4 yes    -          checkpoint_writes branch:to:supervisor
   lookup@5 (turn 1)          2a0cbb7b-e3af-43f8-925c-7f9b3bf7636c        1     5 yes    -          checkpoint_writes branch:to:lookup
   supervisor@6 (turn 1)      bd54dc0f-991a-4919-e7c1-d91f4fca2044        1     6 yes    -          checkpoint_writes branch:to:supervisor
-  __input__@7                4b1b4a94-cf51-6e79-1ae1-54a0ca3b3489     None     7 yes    -          checkpoint_writes -
+  __input__@7 (turn 2)       4b1b4a94-cf51-6e79-1ae1-54a0ca3b3489        2     7 yes    -          checkpoint_writes -
   supervisor@9 (turn 2)      53361bbb-60de-1ec0-3e54-2cb20c574969        2     9 yes    -          checkpoint_writes branch:to:supervisor
   booking@10 (turn 2)        5ce1baa6-855e-44bb-9133-be97eba7e992        2    10 yes    -          checkpoint_writes branch:to:booking
   supervisor@11 (turn 2)     aba3c0ce-49bc-14cb-60b6-a2c5a62d8d25        2    11 yes    -          checkpoint_writes branch:to:supervisor
@@ -63,7 +63,7 @@ Two kinds of read, kept apart because LangGraph records them differently:
 STATE branch:to:supervisor:00000000000000000000000000000002.0.12064815313111954
   born in checkpoint 1f1ab311-0f97-69a1-8000-e23c1401116c  step 0
   WRITTEN BY
-    __input__@-1               task_id=069afb78-c334-0254-dcb0-96cccd5abc8b
+    __input__@-1 (turn 0)      task_id=069afb78-c334-0254-dcb0-96cccd5abc8b
       evidence: checkpoint.pending_writes  checkpoint=1f1ab311-0f94-6c9c-bfff-ee5133dc19cc  step=-1  channel=branch:to:supervisor  value_sha1=2be88ca4242c
   READ BY  (no task received this version)
   TRIGGERED
@@ -73,7 +73,7 @@ STATE branch:to:supervisor:00000000000000000000000000000002.0.12064815313111954
 STATE messages:00000000000000000000000000000002.0.12064815313111954
   born in checkpoint 1f1ab311-0f97-69a1-8000-e23c1401116c  step 0
   WRITTEN BY
-    __input__@-1               task_id=069afb78-c334-0254-dcb0-96cccd5abc8b
+    __input__@-1 (turn 0)      task_id=069afb78-c334-0254-dcb0-96cccd5abc8b
       evidence: checkpoint.pending_writes  checkpoint=1f1ab311-0f94-6c9c-bfff-ee5133dc19cc  step=-1  channel=messages  value_sha1=c8e0323e88ec
   READ BY
     supervisor@1 (turn 0)
@@ -93,7 +93,7 @@ STATE messages:00000000000000000000000000000003.0.7368290366656945
 STATE branch:to:supervisor:00000000000000000000000000000005.0.4251445223825404
   born in checkpoint 1f1ab311-2196-6e3a-8003-8ce35a02028a  step 3
   WRITTEN BY
-    __input__@2                task_id=3266dae1-93da-26e3-adac-668564ab4dbe
+    __input__@2 (turn 1)       task_id=3266dae1-93da-26e3-adac-668564ab4dbe
       evidence: checkpoint.pending_writes  checkpoint=1f1ab311-2193-6ae2-8002-4df9473dfe1e  step=2  channel=branch:to:supervisor  value_sha1=2be88ca4242c
   READ BY  (no task received this version)
   TRIGGERED
@@ -106,7 +106,7 @@ STATE messages:00000000000000000000000000000005.0.4251445223825404
       evidence: element ids recorded per version  checkpoint=1f1ab311-2196-6e3a-8003-8ce35a02028a
       note: channel class BinaryOperatorAggregate; all 2 element ids of the earlier version are present in this one
   WRITTEN BY
-    __input__@2                task_id=3266dae1-93da-26e3-adac-668564ab4dbe
+    __input__@2 (turn 1)       task_id=3266dae1-93da-26e3-adac-668564ab4dbe
       evidence: checkpoint.pending_writes  checkpoint=1f1ab311-2193-6ae2-8002-4df9473dfe1e  step=2  channel=messages  value_sha1=f7c28d3ac113
   READ BY
     supervisor@4 (turn 1)
@@ -172,7 +172,7 @@ STATE messages:00000000000000000000000000000008.0.652857166073468
 STATE branch:to:supervisor:00000000000000000000000000000010.0.00017371187496229012
   born in checkpoint 1f1ab311-dc7a-6e35-8008-fc6b27144ed3  step 8
   WRITTEN BY
-    __input__@7                task_id=4b1b4a94-cf51-6e79-1ae1-54a0ca3b3489
+    __input__@7 (turn 2)       task_id=4b1b4a94-cf51-6e79-1ae1-54a0ca3b3489
       evidence: checkpoint.pending_writes  checkpoint=1f1ab311-dc78-6a82-8007-ffb6988e3d45  step=7  channel=branch:to:supervisor  value_sha1=2be88ca4242c
   READ BY  (no task received this version)
   TRIGGERED
@@ -185,7 +185,7 @@ STATE messages:00000000000000000000000000000010.0.00017371187496229012
       evidence: element ids recorded per version  checkpoint=1f1ab311-dc7a-6e35-8008-fc6b27144ed3
       note: channel class BinaryOperatorAggregate; all 6 element ids of the earlier version are present in this one
   WRITTEN BY
-    __input__@7                task_id=4b1b4a94-cf51-6e79-1ae1-54a0ca3b3489
+    __input__@7 (turn 2)       task_id=4b1b4a94-cf51-6e79-1ae1-54a0ca3b3489
       evidence: checkpoint.pending_writes  checkpoint=1f1ab311-dc78-6a82-8007-ffb6988e3d45  step=7  channel=messages  value_sha1=28739e6a8aa2
   READ BY
     supervisor@9 (turn 2)
@@ -250,11 +250,11 @@ STATE messages:00000000000000000000000000000013.0.08243108506223051
 
 ## The data path, one line each  (READ relations only)
 
-  __input__@-1               --messages:v2.1206      --> supervisor@1 (turn 0)
-  __input__@2                --messages:v5.4251      --> supervisor@4 (turn 1)
+  __input__@-1 (turn 0)      --messages:v2.1206      --> supervisor@1 (turn 0)
+  __input__@2 (turn 1)       --messages:v5.4251      --> supervisor@4 (turn 1)
   supervisor@4 (turn 1)      --messages:v6.1291      --> lookup@5 (turn 1)
   lookup@5 (turn 1)          --messages:v7.7592      --> supervisor@6 (turn 1)
-  __input__@7                --messages:v10.0001     --> supervisor@9 (turn 2)
+  __input__@7 (turn 2)       --messages:v10.0001     --> supervisor@9 (turn 2)
   supervisor@9 (turn 2)      --messages:v11.0337     --> booking@10 (turn 2)
   booking@10 (turn 2)        --messages:v12.7176     --> supervisor@11 (turn 2)
 
