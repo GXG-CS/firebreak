@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import Any, Optional
+from typing import Any
 
 from firebreak.tracing.events import Event
 
@@ -70,7 +70,7 @@ def _config_ids(config: Any) -> dict:
     }
 
 
-def element_ids(value: Any) -> Optional[list]:
+def element_ids(value: Any) -> list | None:
     """Stable per-element identity of a list-valued channel, for checking containment.
 
     Only identities are kept, never content. LangChain messages carry a stable `id`; anything else
@@ -102,7 +102,7 @@ def channel_types(graph: Any) -> dict:
     return out
 
 
-def snapshot_checkpoints(graph: Any, config: Optional[dict], trace: Any) -> int:
+def snapshot_checkpoints(graph: Any, config: dict | None, trace: Any) -> int:
     """Append a `checkpoint_fact` event for every checkpoint of this thread not yet recorded.
 
     Safe to call after each invoke: checkpoints are immutable and identified by `checkpoint_id`,

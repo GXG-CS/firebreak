@@ -1,4 +1,8 @@
-"""Forward taint propagation over the execution graph."""
+"""LEGACY. Forward taint propagation over the inferred execution graph.
+
+Part of the earlier cascade work, built on `graph/execution.py`, whose edges are inferred from
+ordering. Retained and tested, but not the current line.
+"""
 
 from __future__ import annotations
 

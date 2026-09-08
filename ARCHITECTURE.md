@@ -1,82 +1,64 @@
-# Architecture (v0.1)
+# Architecture
 
-Firebreak is a runtime observer for LangGraph. It never changes how the graph routes; it records
-what happened, reconstructs dependencies, and (optionally) injects faults through wrappers that the
-example or the user applies at build time.
+Current scope: LangGraph runtime → Capture → Trace → Reconstruction → provenance output.
 
 ```
-                 +--------------------+
-   graph.stream  |  LangGraph runtime |  callbacks (tool / model / chain events, node metadata)
-  ─────────────▶ |  stream_mode=debug |  ────────────────────────────────────────────────┐
-                 +--------------------+                                                  │
-                          │ task / task_result / checkpoint                              │
-                          ▼                                                              ▼
-                 +--------------------+                                     +------------------------+
-                 |  tracing.Trace     | ◀───────────────────────────────── |  tracing.FirebreakTracer|
-                 |  ordered Events    |                                     +------------------------+
-                 +--------------------+
-                          │
-                          ▼
-                 +--------------------+      +--------------------+      +--------------------+
-                 |  graph.Execution   | ───▶ |  detection.detect  | ───▶ |  reporting.Cascade |
-                 |  Graph + propagate |      |  explicit signals  |      |  Report            |
-                 +--------------------+      +--------------------+      +--------------------+
+             LangGraph runtime
+   ┌──────────────┼───────────────┐
+   │              │               │
+debug/tasks    callbacks     checkpointer
+   │              │               │
+   └──────────────┼───────────────┘
+                  ▼
+     firebreak/tracing/  (Capture)
+       events.py     Event, JSON-safe truncation, routing-channel test
+       callbacks.py  tool / model / node-scoped events, attributed via langgraph_* metadata
+       recorder.py   record(): runs the graph, merges both streams, snapshots the checkpointer
+                  ▼
+                Trace          an ordered list of Events + run metadata, one .jsonl file
+                  ▼
+   firebreak/provenance/  (Reconstruction)
+       capture.py    snapshot_checkpoints(): checkpoint records -> `checkpoint_fact` events
+       graph.py      ProvenanceGraph: TaskRun -> StateVersion -> TaskRun, every relation with evidence
+       render.py     .provenance.json and .provenance.txt
+                  ▼
+            ProvenanceGraph
 ```
 
-## 1. Capture (`firebreak/tracing`)
+## Capture
 
-Two sources are merged into one ordered event list:
+Three runtime sources, merged into one ordered event list.
 
-- `graph.stream(..., stream_mode=["debug", "values"])` gives, per node run: `task` (name, input
-  state, trigger channels) and `task_result` (writes as `(channel, value)` pairs, error,
-  interrupts), plus `checkpoint` events. This is the authoritative record of state flow.
-- A `BaseCallbackHandler` attached through `config["callbacks"]` gives tool and model calls made
-  inside a node. LangGraph stamps their metadata with `langgraph_node`, `langgraph_step`, and
-  `langgraph_triggers`, so every tool/model event is attributed to the node run that made it.
+**Debug / tasks stream.** `graph.stream(..., stream_mode=["debug", "values"])` reports, per node
+run, a `task` event (name, input state, trigger channels) and a `task_result` event (the writes as
+`(channel, value)` pairs, plus any error), and a `checkpoint` event per super-step.
 
-Events are JSON-safe and truncated; a run can be saved with `Trace.to_jsonl` and re-analysed
-offline with `firebreak report`.
+**Callbacks.** A `BaseCallbackHandler` on `config["callbacks"]` reports tool and model calls.
+LangGraph stamps each run started inside a node with `langgraph_node`, `langgraph_step`,
+`langgraph_triggers`, `langgraph_path` and `langgraph_checkpoint_ns`, which is how every call is
+attributed to the node run that made it. The debug stream drops the last two as redundant, so the
+callback path is the only source for them.
 
-## 2. Represent (`firebreak/graph`)
+**Checkpointer.** After each invoke, `snapshot_checkpoints()` reads the thread's checkpoints and
+appends one `checkpoint_fact` event each, holding `channel_versions`, `versions_seen`,
+`updated_channels`, the `(task_id, channel, value-digest)` writes, the lineage, and element
+identities for folding channels. `channel_values` is deliberately not stored: a full state snapshot
+per step would make the trace grow quadratically.
 
-`ExecutionGraph.from_trace` builds one `NodeRun` per executed node instance (name, step, triggers,
-writes, error, tool calls). The compiled graph's static edges are snapshotted at record time. A
-data-flow edge `A -> B` exists when a static edge `A.name -> B.name` exists and `A` is the latest
-run of that node that finished before `B` started. Edges carry the non-routing state keys `A`
-wrote, which is what `B` could read from state. Fan-in (a join) yields several incoming edges;
-nodes that ran in parallel in the same step never get an edge between them.
+A trace can hold one invoke or a whole episode of them on one thread. Every event carries
+`episode_id`, `turn`, `invoke_id` and a globally increasing `seq`.
 
-`propagate(graph, source)` does a breadth-first taint walk over these edges from the source node run
-and returns affected runs, a path to each, and blast radius = affected / total node runs.
+## Reconstruction
 
-## 3. Inject (`firebreak/injection`)
+`ProvenanceGraph.from_trace` builds a bipartite graph: `TaskRunRef` for each real task execution,
+`StateVersion` for each version of each channel, with `WRITE`, `READ`, `TRIGGER` and
+`DERIVED_FROM` relations. Task identity comes from the trace; `pending_writes` proves where a task
+ran, not whether it ran. See `docs/PROVENANCE.md` for the grounding of each relation.
 
-`FaultPlan.parse("tool_error:search_web")` builds a plan. The plan hands out wrappers:
+## Not the current line
 
-- `plan.tool(name)` decorates a tool function; on the chosen call it raises, returns bad output,
-  or sleeps and times out.
-- `plan.wrap_node(name, fn)` wraps a node function; it can corrupt the returned writes.
-
-Every injection is recorded as an `injection` event in the trace, which is the ground truth the
-evaluation compares against. Injection never touches LangGraph internals.
-
-## 4. Detect (`firebreak/detection`)
-
-Detectors only look for explicit signals: tool errors, timeouts, node errors, the injected
-corruption marker in tool outputs or node writes, and user-supplied validators
-(`{node_name: callable(writes) -> error | None}`). The earliest signal is the source.
-
-## 5. Report (`firebreak/reporting`)
-
-`CascadeReport` = source signal, propagation path, affected/total, blast radius, detection delay
-(steps between the injection and the first signal), final outcome from the example's `evaluate`,
-and wall time. Rendered as text (CLI) or JSON.
-
-## Conventions for examples
-
-An example module exposes `build(model: str = "fake", plan: FaultPlan | None = None) -> App` with
-`App(graph, input, evaluate, validators)`. `evaluate(final_state) -> "PASSED" | "FAILED"`.
-
-## Non-goals in v0.1
-
-No routing changes, no retries, no quarantine, no LLM-as-judge, no hallucination detection.
+`firebreak/graph/` holds an earlier `ExecutionGraph` that links `A -> B` when the compiled graph
+declares a static edge and `A` finished before `B` started. That is an inference over ordering, and
+it is what the provenance layer replaces. It is retained because `detection/`, `reporting/` and
+`runner.py` still use it. `injection/` and `integrations/` are the fault-injection and cascade work
+built on top of it. All of it still runs and is still tested; none of it is the current focus.

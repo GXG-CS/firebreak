@@ -1,34 +1,38 @@
 # Roadmap
 
-## v0.1 — Detection only
+## Now: Capture and Reconstruction
 
-Five capabilities, nothing else: Capture, Represent, Inject, Trace, Report.
+The whole current scope is making one LangGraph run into provenance that can be checked line by
+line:
 
-Supported fault signals (explicit and checkable):
+```
+LangGraph runtime -> Capture -> Trace -> Reconstruction -> .provenance.json / .provenance.txt
+```
 
-- tool exception
-- timeout
-- node exception
-- injected corruption marker (from Firebreak's own injector)
-- validator failure (user-defined `callable(writes) -> error | None`)
-- user-defined detector
+Done:
 
-Injectable faults: `tool_error`, `tool_bad_output`, `node_bad_output`, `message_corruption`,
-`timeout`.
+* Capture from all three runtime sources (debug/tasks stream, callbacks, checkpointer), at episode
+  level, into a single offline `.jsonl`.
+* Reconstruction into `TaskRun -> StateVersion -> TaskRun` with evidence on every relation.
+* Observed and derived evidence kept apart; derivations checked against recorded element
+  identities rather than assumed from the channel class.
+* Task identity taken from the trace, not from who happened to write.
 
-Metrics (computed by `eval/run.py` on `benchmarks/`): cascade detection precision / recall, source
-attribution accuracy, propagation path F1, blast radius error, detection delay, runtime overhead.
+Open, in the order they matter:
 
-Explicit non-goals: hallucination detection, semantic inconsistency, LLM-as-judge, uncertainty,
-provenance-carrying state, mitigation, prevention.
+* **Read the canonical example line by line.** Understand exactly what the stream, the callbacks
+  and the checkpointer each report, before building anything on top.
+* **Subgraphs.** `snapshot_checkpoints()` lists one checkpoint namespace. A real nested subgraph
+  writes its own, so its provenance is currently incomplete. `langgraph_checkpoint_ns` is already
+  captured.
+* **Message-level provenance.** With a single `messages` channel every task reads and writes the
+  same channel, so relations are coarse. Message ids are stable and both the writes and the task
+  inputs are recorded, so this is set membership over captured data, not inference.
+* **Other capture surfaces.** Other frameworks, and reading traces produced by OpenTelemetry or
+  Langfuse instrumentation.
 
-Milestone 1 (this): a minimal LangGraph multi-agent system + fault injection, and one complete
-captured cascade trace with a correct report.
+## Later, and currently frozen
 
-## Later
-
-- Semantic signals: conflicting results between parallel agents, schema drift, LLM-as-judge.
-- Provenance-carrying state (reducers that tag every write with its origin).
-- Containment: quarantine a node run's writes, re-dispatch, escalate via `interrupt()`.
-- Exporters: Langfuse / LangSmith spans with cascade annotations.
-- More systems: supervisor, swarm/handoff, deep-agents style subagents.
+Detection, propagation, cascade reporting, fault injection, containment. The code is in the tree
+and still tested; none of it is being developed. Nothing should be built on the provenance layer
+until the provenance layer is understood.

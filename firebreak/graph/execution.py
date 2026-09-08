@@ -1,4 +1,13 @@
-"""Rebuild the execution / dependency graph of one run (or one episode) from its Trace."""
+"""LEGACY. Execution graph inferred from the static topology plus execution ordering.
+
+An edge `A -> B` is added when the compiled graph declares a static edge `A.name -> B.name` and
+`A`'s run finished before `B`'s started. That is an inference over ordering, not a record of what
+`B` read, and it is what `firebreak/provenance/` replaces: LangGraph writes the real read/write
+relation down, so it does not have to be guessed.
+
+This module is retained only because `detection/`, `reporting/` and `runner.py` still build on it.
+Do not use it for provenance, and do not extend it.
+"""
 
 from __future__ import annotations
 

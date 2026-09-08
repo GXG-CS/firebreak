@@ -1,140 +1,97 @@
 # Firebreak
 
-**Stop cascading failures in LangGraph multi-agent systems.**
+**Turn a LangGraph run into provenance you can check, not a graph you have to trust.**
 
 ```
 pip install langgraph-firebreak
 ```
 
-One agent fails. The failure travels through handoffs, shared state, and tool results until the
-whole team is wrong and nobody can say where it started. Firebreak captures the LangGraph runtime,
-rebuilds the actual execution and dependency graph, lets you inject faults on purpose, traces where
-each fault went, and reports the blast radius.
+When several agents share state, the question that matters is which task produced the value
+another task acted on. Most tools answer it after the fact, by reading a text trace and guessing.
+LangGraph already writes the answer down. Firebreak captures those records and materialises them.
 
 ```
-Agent A fails
-    ↓
-failure propagates
-    ↓
-🔥 FIREBREAK 🔥
-    ↓
-downstream agents protected
+LangGraph runtime
+   │
+   ├─ debug / tasks stream      node runs, their triggers, the channels they wrote
+   ├─ callbacks                 tool and model calls, attributed to the node that made them
+   └─ checkpointer              channel versions, versions seen, per-task writes, lineage
+         │
+         ▼
+      Capture                   firebreak/tracing/  -> one Trace, a .jsonl file
+         │
+         ▼
+   Reconstruction               firebreak/provenance/  -> ProvenanceGraph
+         │
+         ▼
+   .provenance.json / .provenance.txt
 ```
 
-## Quick start
+The stream, the callbacks and the checkpointer are LangGraph's and LangChain's own runtime
+sources. Capture persists what they report into a trace that can be analysed offline, with no
+service and no re-run. Reconstruction turns that trace into provenance.
 
-```bash
-firebreak run examples/multi_agent/research_team.py --inject tool_error:search_web
-```
+## What the provenance says
 
-```
-Cascade detected
-
-Source
-  researcher.search_web        tool_error  (step 1)
-
-Propagation
-  researcher
-      ↓
-  reviewer
-      ↓
-  planner
-      ↓
-  executor
-
-Affected nodes: 4 / 5
-Blast radius: 80%
-Detection delay: 0 steps
-Final task: FAILED
-```
-
-No API key is required for the examples: `--model fake` (the default) runs a deterministic scripted
-team. Point `--model openai` at any OpenAI-compatible endpoint (vLLM, Ollama, OpenAI) with
-`OPENAI_BASE_URL` / `OPENAI_API_KEY`.
-
-## What v0.1 does
-
-| Capability | What it means |
-|---|---|
-| **Capture** | Records every LangGraph node start/end, state write, trigger, tool call, and model call of a run into a JSONL trace |
-| **Represent** | Rebuilds the data path from LangGraph's checkpoint records: which task wrote which channel version, and which task was handed it |
-| **Inject** | Injects tool errors, bad tool output, corrupted messages, bad node output, and timeouts at a chosen call |
-| **Trace** | Follows a fault forward through the dependency graph to every node, state key, and tool call it reached |
-| **Report** | Prints source, propagation path, affected nodes, blast radius, detection delay, and final task outcome |
-
-v0.1 is **detection only**. It reports on explicit, checkable fault signals: tool exceptions,
-timeouts, injected corruption, validator failures, and user-defined detectors. It does not claim to
-detect hallucinations or semantic inconsistency. Mitigation, prevention, and semantic detectors come
-later; see `docs/ROADMAP.md`.
-
-## A real environment, not a toy
-
-`firebreak/integrations/tau2_airline/` runs a Supervisor + Lookup + Booking LangGraph team on the
-τ²-bench airline domain (vendored, MIT): real tools, a real database, and an objective evaluator.
-One corrupted report from the lookup specialist becomes a cancellation of the wrong reservation:
-
-```bash
-python -m firebreak.integrations.tau2_airline.runner --task 39 --model fake        # scripted team, no LLM
-python -m firebreak.integrations.tau2_airline.runner --task 39 --model fake \
-    --inject message_corruption:lookup:1:swap_first_eligible_reservation
-```
-
-With a local Qwen2.5-14B behind `--model openai` the clean run passes the task and the faulted run
-fails it; see `docs/FIRST_CASCADE.md` for the full traces.
-
-## Provenance from LangGraph's own records
-
-The dependency graph is not guessed. LangGraph writes down which task wrote which channel
-(`pending_writes`), the version that produced (`channel_versions`), and what each task was handed
-(`task.input`). Firebreak copies those records into the trace and rebuilds the data path from them:
+Not `task -> task`, but the state artifact in the middle, so two tasks writing the same version
+stay two producers instead of one being picked as the cause:
 
 ```
 lookup@5  --WRITE-->  messages:v7  --READ-->  supervisor@6
 ```
 
-with the state version kept as its own node, so two tasks writing the same version stay two
-producers instead of one being picked as the cause. Writes, reads and triggers are observed; the
-one derived relation, whether a later version of an accumulating channel still contains an earlier
-one, is checked against recorded element ids rather than assumed from the channel type.
-`docs/PROVENANCE.md` states where every relation comes from and what the model cannot express yet.
+Every relation carries the field it came from, and the two evidence classes are never mixed:
+
+* **observed** — WRITE, READ and TRIGGER. Each is a field LangGraph wrote down.
+* **derived** — DERIVED_FROM between consecutive versions of a folding channel. Folding is not
+  retention, so each one is checked against element identities recorded per version and comes out
+  `verified`, `refuted` or `unverified`.
+
+`docs/PROVENANCE.md` states where each relation comes from and what the model cannot express yet.
+
+## Try it
 
 ```bash
 python scripts/dump_provenance.py docs/traces/tau2_task39_qwen14b_clean.jsonl
 ```
 
-The same command audits the older static-edge heuristic against the recorded relations.
+That reads the canonical capture in `docs/traces/` and writes the reconstruction beside it. The
+run behind it is τ²-bench airline task 39 with a Supervisor + Lookup + Booking team on a local
+Qwen2.5-14B; see `docs/traces/README.md`.
 
-## Evaluation from day one
+To capture a run of your own, record it instead of invoking it:
 
-`benchmarks/` holds scenarios with ground truth (injected source, true propagation path, expected
-outcome). `python -m eval.run` replays them and reports cascade detection precision/recall, source
-attribution accuracy, propagation path F1, blast radius error, detection delay, and runtime overhead.
+```python
+from firebreak.tracing.recorder import Trace, record
+
+trace = Trace()
+record(graph, {"messages": [...]}, trace=trace, thread_id="t", turn=0)   # once per turn
+trace.to_jsonl("run.jsonl")
+```
+
+The graph must be compiled with a checkpointer; that is where the provenance lives.
 
 ## Layout
 
 ```
-firebreak/            the library
-  tracing/            capture LangGraph runtime events -> Trace (JSONL)
-  graph/              execution / dependency graph, taint propagation
-  injection/          fault plans and tool / node wrappers
-  detection/          explicit fault-signal detectors
-  reporting/          cascade report model + text / JSON rendering
-  cli.py              `firebreak run`, `firebreak report`
-examples/             runnable LangGraph systems (fake model by default)
-benchmarks/           scenarios with ground truth
-eval/                 metrics + runner
-tests/                pytest
+firebreak/
+  tracing/       Capture: events.py, callbacks.py, recorder.py
+  provenance/    Reconstruction: capture.py, graph.py, render.py
+scripts/
+  dump_provenance.py
+docs/
+  PROVENANCE.md  where every relation comes from
+  traces/        the canonical example
 ```
 
-## Where Firebreak sits
-
-LangChain ships single-point guardrails as middleware (tool-call limits, model fallback,
-human-in-the-loop, PII detection). None of them watch a failure move *between* agents at runtime.
-Firebreak works during the run, on the dependency graph the run actually produced.
+Everything else in the tree (`firebreak/graph/`, `detection/`, `injection/`, `reporting/`,
+`integrations/`) is earlier experimental work: an execution graph built from the static topology
+plus execution ordering, fault injection, and cascade reporting on top of it. It still runs and is
+still tested, but it is not the current line and it is not what the provenance layer uses.
 
 ## Status
 
-v0.1.0 in development. See `ARCHITECTURE.md` and `docs/ROADMAP.md`.
+Pre-alpha. Current scope is Capture and Reconstruction only.
 
 ## License
 

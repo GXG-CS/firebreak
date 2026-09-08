@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Optional
+from typing import Any
 
 from firebreak.graph.execution import ExecutionGraph
 from firebreak.provenance.graph import ProvenanceGraph
@@ -95,7 +95,7 @@ def render_text(prov: ProvenanceGraph, trace: Any = None, source_name: str = "")
     add("")
     add(f"  {'checkpoint_id':<40} {'step':>5} {'source':<8} {'writes':>6}  updated_channels")
     for cp in prov.checkpoints:
-        add(f"  {str(cp['checkpoint_id']):<40} {str(cp['step']):>5} {str(cp['source'] or ''):<8} "
+        add(f"  {cp['checkpoint_id']!s:<40} {cp['step']!s:>5} {cp['source'] or ''!s:<8} "
             f"{cp['n_writes']:>6}  {', '.join(cp['updated_channels']) or '-'}")
     add("")
 
@@ -104,7 +104,7 @@ def render_text(prov: ProvenanceGraph, trace: Any = None, source_name: str = "")
     add(f"  {'label':<26} {'task_id':<40} {'turn':>4} {'step':>5} {'wrote':<6} {'outcome':<10} "
         f"{'placed by':<17} triggers")
     for run in sorted(prov.tasks.values(), key=lambda t: (t.step is None, t.step or 0, t.node)):
-        add(f"  {run.label:<26} {run.task_id:<40} {str(run.turn):>4} {str(run.step):>5} "
+        add(f"  {run.label:<26} {run.task_id:<40} {run.turn!s:>4} {run.step!s:>5} "
             f"{('yes' if run.wrote else 'NO'):<6} {(run.outcome or '-'):<10} {run.resolution:<17} "
             f"{', '.join(run.triggers) or '-'}")
     outcomes = sorted({t.outcome for t in prov.tasks.values() if t.outcome})
@@ -203,7 +203,9 @@ def render_text(prov: ProvenanceGraph, trace: Any = None, source_name: str = "")
 
 
 def compare_with_legacy(prov: ProvenanceGraph, legacy: ExecutionGraph) -> dict:
-    """Audit the old static-edge + ordering heuristic against the observed provenance.
+    """LEGACY AUDIT. Check the old static-edge + ordering heuristic against the observed provenance.
+
+    Used only by `dump_provenance.py --legacy-audit`. Not part of the current path.
 
     The provenance side is the substrate; the heuristic is only the thing being audited. Nothing
     here changes either graph.

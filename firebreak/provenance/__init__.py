@@ -14,7 +14,12 @@ from firebreak.provenance.graph import (
     TaskRunRef,
     WriteRelation,
 )
-from firebreak.provenance.render import compare_with_legacy, render_comparison, render_json, render_text
+from firebreak.provenance.render import (
+    compare_with_legacy,
+    render_comparison,
+    render_json,
+    render_text,
+)
 
 __all__ = [
     "CHECKPOINT_FACT",

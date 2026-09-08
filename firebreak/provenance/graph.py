@@ -43,7 +43,7 @@ candidate consumers rather than one being chosen.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from firebreak.provenance.capture import CHECKPOINT_FACT, SENTINEL_CHANNELS
 
@@ -59,13 +59,13 @@ class Evidence:
 
     source: str  # checkpoint.pending_writes | checkpoint.versions_seen
     checkpoint_id: str
-    step: Optional[int] = None
-    channel: Optional[str] = None
-    version: Optional[str] = None
-    task_id: Optional[str] = None
-    node: Optional[str] = None
-    value_sha1: Optional[str] = None
-    note: Optional[str] = None
+    step: int | None = None
+    channel: str | None = None
+    version: str | None = None
+    task_id: str | None = None
+    node: str | None = None
+    value_sha1: str | None = None
+    note: str | None = None
 
     def to_dict(self) -> dict:
         return {k: v for k, v in asdict(self).items() if v is not None}
@@ -77,19 +77,19 @@ class TaskRunRef:
 
     task_id: str
     node: str
-    step: Optional[int] = None
-    turn: Optional[int] = None
-    invoke_id: Optional[str] = None
+    step: int | None = None
+    turn: int | None = None
+    invoke_id: str | None = None
     triggers: list = field(default_factory=list)
-    checkpoint_ns: Optional[str] = None
-    path: Optional[str] = None
+    checkpoint_ns: str | None = None
+    path: str | None = None
     input_channels: list = field(default_factory=list)
     from_trace: bool = False
     from_checkpoint: bool = False
-    scheduled_from: Optional[str] = None  # checkpoint id the task read its state from
+    scheduled_from: str | None = None  # checkpoint id the task read its state from
     resolution: str = "unresolved"  # checkpoint_writes | step_alignment | unresolved
     wrote: bool = False  # wrote at least one real state channel
-    outcome: Optional[str] = None  # error | no_writes | interrupt | ... from LangGraph's sentinel write
+    outcome: str | None = None  # error | no_writes | interrupt | ... from LangGraph's sentinel write
 
     @property
     def label(self) -> str:
@@ -109,7 +109,7 @@ class StateVersion:
     channel: str
     version: str
     checkpoint_id: str  # the checkpoint in which this version first appears
-    step: Optional[int] = None
+    step: int | None = None
     producer_task_ids: list = field(default_factory=list)
 
     @property
@@ -144,7 +144,7 @@ class DerivedRelation:
     from_state_key: str  # the version it was folded onto
     evidence: Evidence
     verdict: str = "unverified"
-    kept: Optional[int] = None
+    kept: int | None = None
     lost: list = field(default_factory=list)
 
     @property
@@ -205,7 +205,7 @@ class ProvenanceGraph:
 
     # ---- construction ---------------------------------------------------------------------
     @classmethod
-    def from_trace(cls, trace: "Trace") -> "ProvenanceGraph":
+    def from_trace(cls, trace: Trace) -> ProvenanceGraph:
         graph = cls()
         graph.channel_types = dict(trace.meta.get("channel_types") or {})
         graph.accumulating = set(trace.meta.get("accumulating_channels") or [])
@@ -245,14 +245,14 @@ class ProvenanceGraph:
                 run.checkpoint_ns = run.checkpoint_ns or extra.get("checkpoint_ns")
                 run.path = run.path or extra.get("path")
 
-    def _task_by_node_step(self, node: Optional[str], step: Optional[int]) -> Optional[TaskRunRef]:
+    def _task_by_node_step(self, node: str | None, step: int | None) -> TaskRunRef | None:
         for run in self.tasks.values():
             if run.node == node and run.step == step:
                 return run
         return None
 
     @staticmethod
-    def _load_checkpoints(trace: "Trace") -> list[dict]:
+    def _load_checkpoints(trace: Trace) -> list[dict]:
         facts = [e.payload for e in trace.of_kind(CHECKPOINT_FACT)]
         return sorted(facts, key=lambda f: str(f.get("checkpoint_id") or ""))
 
