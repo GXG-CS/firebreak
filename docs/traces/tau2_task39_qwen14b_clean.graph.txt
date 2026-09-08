@@ -6,13 +6,13 @@ static edges declared by the compiled graph: [('__start__', 'supervisor'), ('boo
 ## Node runs
 
 id                         node         turn step  writes       tools
-t0:4ef5249f-8699-797f-59ee-9d8aab4bf948 supervisor      0    1  messages     
-t1:c6e8e82e-b30f-80fc-20fb-4a1d7bf28bbd supervisor      1    4  messages     
-t1:21b1c343-c40e-cbd7-c4ef-b21c1130d7fc lookup          1    5  messages     get_user_details(amelia_davis_8890), get_reservation_details(8C8K4E), get_reservation_details(UDMOP1), get_reservation_details(XAZ3C0), get_reservation_details(LU15PA), get_reservation_details(MSJ4OA), get_reservation_details(I6M8JQ), get_reservation_details(4XGCCM)
-t1:a99009f0-fc9e-e870-a3a5-178d270e1eb2 supervisor      1    6  messages     
-t2:b69a6ad6-2abf-f2ac-bfa4-9d07ec5c95d7 supervisor      2    9  messages     
-t2:bc25b9c0-e8cc-b0b4-eb61-f28f05be295d booking         2   10  messages     cancel_reservation(8C8K4E), cancel_reservation(LU15PA), cancel_reservation(MSJ4OA)
-t2:a56f2640-107e-e77b-4a25-4514556b5b32 supervisor      2   11  messages     
+t0:f80c8b4c-eb29-9dcd-b166-f4fa5c848c8d supervisor      0    1  messages     
+t1:5ab04f19-da84-0a55-42ca-169f58cb369a supervisor      1    4  messages     
+t1:2a0cbb7b-e3af-43f8-925c-7f9b3bf7636c lookup          1    5  messages     get_user_details(amelia_davis_8890), get_reservation_details(8C8K4E), get_reservation_details(UDMOP1), get_reservation_details(XAZ3C0), get_reservation_details(LU15PA), get_reservation_details(MSJ4OA), get_reservation_details(I6M8JQ), get_reservation_details(4XGCCM)
+t1:bd54dc0f-991a-4919-e7c1-d91f4fca2044 supervisor      1    6  messages     
+t2:53361bbb-60de-1ec0-3e54-2cb20c574969 supervisor      2    9  messages     
+t2:5ce1baa6-855e-44bb-9133-be97eba7e992 booking         2   10  messages     cancel_reservation(8C8K4E), cancel_reservation(LU15PA), cancel_reservation(MSJ4OA)
+t2:aba3c0ce-49bc-14cb-60b6-a2c5a62d8d25 supervisor      2   11  messages     
 
 ## Data-flow edges  (A -> B means B could read what A wrote)
 
@@ -32,4 +32,4 @@ Nodes executed: supervisor, lookup, booking  (7 runs)
 Turns: 3
 Final task: PASSED
 Utility damaged: no
-Wall time: 37.77s
+Wall time: 37.70s

@@ -93,8 +93,10 @@ lookup@5  --WRITE-->  messages:v7  --READ-->  supervisor@6
 ```
 
 with the state version kept as its own node, so two tasks writing the same version stay two
-producers instead of one being picked as the cause. `docs/PROVENANCE.md` states where every
-relation comes from and what the model cannot express yet.
+producers instead of one being picked as the cause. Writes, reads and triggers are observed; the
+one derived relation, whether a later version of an accumulating channel still contains an earlier
+one, is checked against recorded element ids rather than assumed from the channel type.
+`docs/PROVENANCE.md` states where every relation comes from and what the model cannot express yet.
 
 ```bash
 python scripts/dump_provenance.py docs/traces/tau2_task39_qwen14b_clean.jsonl

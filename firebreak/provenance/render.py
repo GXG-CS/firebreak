@@ -44,8 +44,12 @@ def render_text(prov: ProvenanceGraph, trace: Any = None, source_name: str = "")
     add = out.append
     add(f"# Observed state provenance{f' — {source_name}' if source_name else ''}")
     add("")
-    add("Every relation below is a field LangGraph itself recorded. Nothing is inferred from")
-    add("wall-clock time, from the static graph, or by a model.")
+    add("Two evidence classes, never mixed:")
+    add("  observed  WRITE, READ and TRIGGER. Each is a field LangGraph itself recorded.")
+    add("  derived   DERIVED_FROM between consecutive versions of a folding channel. Folding does")
+    add("            not imply the new version contains the old one, so each one is checked against")
+    add("            the element ids recorded per version: verified / refuted / unverified.")
+    add("Nothing is inferred from wall-clock time, from the static graph, or by a model.")
     add("")
     if trace is not None:
         add(f"episode {trace.meta.get('episode_id')}  thread {trace.meta.get('thread_id')}")
@@ -60,9 +64,16 @@ def render_text(prov: ProvenanceGraph, trace: Any = None, source_name: str = "")
     add(f"channels: {', '.join(_channels(prov)) or 'none'}")
     if prov.channel_types:
         add("channel classes: " + ", ".join(f"{c}={prov.channel_types.get(c, '?')}" for c in _channels(prov)))
-        add(f"accumulating (a new version contains the previous one): "
-            f"{', '.join(sorted(prov.accumulating)) or 'none'}  "
-            f"-> {len(prov.derived)} DERIVED relations")
+        verdicts = {v: sum(1 for d in prov.derived if d.verdict == v) for v in ("verified", "refuted", "unverified")}
+        add(f"folding channels (a write is merged into the value, not replacing it): "
+            f"{', '.join(sorted(prov.accumulating)) or 'none'}")
+        add(f"derivations checked against recorded element ids: {verdicts['verified']} verified, "
+            f"{verdicts['refuted']} refuted, {verdicts['unverified']} unverified")
+    resolution = {r: sum(1 for t in prov.tasks.values() if t.resolution == r)
+                  for r in ("checkpoint_writes", "step_alignment", "unresolved")}
+    add(f"task placement: {resolution['checkpoint_writes']} by their own writes, "
+        f"{resolution['step_alignment']} by step alignment (wrote nothing), "
+        f"{resolution['unresolved']} unplaced")
     add("")
     add("Two kinds of read, kept apart because LangGraph records them differently:")
     add("  READ     the version was in the state handed to the task")
@@ -90,10 +101,19 @@ def render_text(prov: ProvenanceGraph, trace: Any = None, source_name: str = "")
 
     add("## Task runs")
     add("")
-    add(f"  {'label':<26} {'task_id':<40} {'turn':>4} {'step':>5}  triggers")
+    add(f"  {'label':<26} {'task_id':<40} {'turn':>4} {'step':>5} {'wrote':<6} {'outcome':<10} "
+        f"{'placed by':<17} triggers")
     for run in sorted(prov.tasks.values(), key=lambda t: (t.step is None, t.step or 0, t.node)):
-        add(f"  {run.label:<26} {run.task_id:<40} {str(run.turn):>4} {str(run.step):>5}  "
+        add(f"  {run.label:<26} {run.task_id:<40} {str(run.turn):>4} {str(run.step):>5} "
+            f"{('yes' if run.wrote else 'NO'):<6} {(run.outcome or '-'):<10} {run.resolution:<17} "
             f"{', '.join(run.triggers) or '-'}")
+    outcomes = sorted({t.outcome for t in prov.tasks.values() if t.outcome})
+    if outcomes:
+        add("")
+        add("  outcome comes from LangGraph's own sentinel write for the task "
+            "(__error__ / __no_writes__ / ...),")
+        add("  which is why every executed task appears in a checkpoint's writes even when it "
+            "wrote no state.")
     add("")
 
     add("## Provenance, per state version")
@@ -104,11 +124,17 @@ def render_text(prov: ProvenanceGraph, trace: Any = None, source_name: str = "")
         state = prov.states[key]
         add(f"STATE {key}")
         add(f"  born in checkpoint {state.checkpoint_id or '(not observed)'}  step {state.step}")
-        ancestors = prov.derivation_ancestors(key)
-        if ancestors:
-            add(f"  accumulated onto {_short(prov.states[ancestors[0]].version)}"
-                + (f" (and {len(ancestors) - 1} earlier)" if len(ancestors) > 1 else "")
-                + f"   [channel class {prov.channel_types.get(state.channel, '?')}]")
+        for derived in prov.derived:
+            if derived.state_key != key:
+                continue
+            older = prov.states.get(derived.from_state_key)
+            add(f"  DERIVED_FROM {_short(older.version) if older else derived.from_state_key}"
+                f"   verdict={derived.verdict}"
+                + (f" kept={derived.kept}" if derived.kept is not None else "")
+                + (f" lost={len(derived.lost)}" if derived.lost else ""))
+            add(f"      evidence: {derived.evidence.source}  checkpoint={derived.evidence.checkpoint_id}")
+            if derived.evidence.note:
+                add(f"      note: {derived.evidence.note}")
         writes = [w for w in prov.writes if w.state_key == key]
         if writes:
             add("  WRITTEN BY")
@@ -157,6 +183,8 @@ def render_text(prov: ProvenanceGraph, trace: Any = None, source_name: str = "")
 
     add("## What this cannot say yet")
     add("")
+    add("  * An `accumulated` relation is only followed through derivations that verified. A")
+    add("    refuted or unverified link stops the chain rather than being assumed through.")
     add("  * The TRIGGER relation is not the data path. LangGraph only stamps `versions_seen`")
     add("    for a task's trigger channels, which in a StateGraph are the routing channels, so")
     add("    the channel carrying the data never appears there.")
@@ -168,6 +196,9 @@ def render_text(prov: ProvenanceGraph, trace: Any = None, source_name: str = "")
     add("    the producer wrote, only that it was in the state it consumed.")
     add("  * Reads are attributed to a task by the super-step it ran in. A node that advanced its")
     add("    seen version without writing anything is recorded with the node name and no task id.")
+    add("  * A task that wrote nothing is placed on its checkpoint by step alignment, using an")
+    add("    offset calibrated on the tasks that did write. That is weaker than a task id match,")
+    add("    and the task table says which placement each task got.")
     return "\n".join(out) + "\n"
 
 

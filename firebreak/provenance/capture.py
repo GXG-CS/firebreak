@@ -18,9 +18,30 @@ from firebreak.tracing.events import Event
 CHECKPOINT_FACT = "checkpoint_fact"
 PREVIEW = 200
 
-# LangGraph channel classes that fold a new write into the existing value, so version N+1 of the
-# channel contains version N. Everything else replaces, and no derivation may be claimed.
-ACCUMULATING_CHANNELS = ("BinaryOperatorAggregate", "Topic", "DeltaChannel")
+# LangGraph channel classes that fold each write into the existing value rather than replacing it.
+# Folding does NOT imply the new version contains the old one: `BinaryOperatorAggregate` takes an
+# arbitrary binary operator, and even `add_messages` replaces a message when the id matches and
+# drops messages on `RemoveMessage`. So this list only decides *where it is worth checking*;
+# whether a version actually retained the previous one is verified per version from element ids.
+FOLDING_CHANNELS = ("BinaryOperatorAggregate", "Topic", "DeltaChannel")
+ACCUMULATING_CHANNELS = FOLDING_CHANNELS  # kept for compatibility with the previous name
+
+# Channels LangGraph writes to record a task's *outcome* rather than any state. Every executed
+# task produces one write, so a task that returned nothing (`__no_writes__`) or raised
+# (`__error__`) still appears in `pending_writes` — which makes those writes a first-hand record
+# of the outcome, and means they must not be turned into state versions.
+# (`langgraph/_internal/_constants.py`.)
+SENTINEL_CHANNELS = {
+    "__error__": "error",
+    "__no_writes__": "no_writes",
+    "__interrupt__": "interrupt",
+    "__resume__": "resume",
+    "__return__": "return",
+}
+
+# Element ids are recorded so containment can be checked instead of assumed. Beyond this many the
+# channel is marked truncated and derivation over it stays unverified.
+MAX_ELEMENT_IDS = 2000
 
 
 def _digest(value: Any) -> str:
@@ -47,6 +68,26 @@ def _config_ids(config: Any) -> dict:
         "checkpoint_ns": conf.get("checkpoint_ns", ""),
         "checkpoint_id": conf.get("checkpoint_id"),
     }
+
+
+def element_ids(value: Any) -> Optional[list]:
+    """Stable per-element identity of a list-valued channel, for checking containment.
+
+    Only identities are kept, never content. LangChain messages carry a stable `id`; anything else
+    falls back to a digest of the element. Returns None when the value is not a list, or when it is
+    longer than MAX_ELEMENT_IDS, in which case containment is left unverified rather than guessed.
+    """
+    if not isinstance(value, (list, tuple)):
+        return None
+    if len(value) > MAX_ELEMENT_IDS:
+        return None
+    ids: list[str] = []
+    for element in value:
+        ident = getattr(element, "id", None)
+        if ident is None and isinstance(element, dict):
+            ident = element.get("id")
+        ids.append(str(ident) if ident is not None else f"#{_digest(element)}")
+    return ids
 
 
 def channel_types(graph: Any) -> dict:
@@ -102,6 +143,18 @@ def snapshot_checkpoints(graph: Any, config: Optional[dict], trace: Any) -> int:
             continue
         checkpoint = item.checkpoint or {}
         metadata = item.metadata or {}
+        # element identities for folding channels, so `derived from` can be checked, not assumed
+        elements: dict[str, dict] = {}
+        folding = set(trace.meta.get("accumulating_channels") or [])
+        for channel, value in (checkpoint.get("channel_values") or {}).items():
+            if str(channel) not in folding:
+                continue
+            member_ids = element_ids(value)
+            elements[str(channel)] = {
+                "ids": member_ids,
+                "n": len(value) if isinstance(value, (list, tuple)) else None,
+                "truncated": member_ids is None and isinstance(value, (list, tuple)),
+            }
         writes = []
         for entry in item.pending_writes or []:
             try:
@@ -136,6 +189,7 @@ def snapshot_checkpoints(graph: Any, config: Optional[dict], trace: Any) -> int:
                         for node, seen in (checkpoint.get("versions_seen") or {}).items()
                     },
                     "updated_channels": [str(c) for c in (checkpoint.get("updated_channels") or [])],
+                    "elements": elements,
                     "writes": writes,
                 },
             )

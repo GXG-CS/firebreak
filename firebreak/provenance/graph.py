@@ -7,7 +7,16 @@ The model is deliberately bipartite rather than `task -> task`:
 so that when several tasks write the same channel in one super-step, all of them are kept as
 producers of that version instead of one being invented as *the* cause.
 
-How each relation is grounded (all fields are LangGraph's own):
+Relations come in two evidence classes, and they are never mixed:
+
+* **observed** — WRITE, READ and TRIGGER. Each is a field LangGraph wrote down.
+* **derived**  — DERIVED_FROM between consecutive versions of a folding channel. Folding does not
+  by itself mean the new version contains the old one (`BinaryOperatorAggregate` takes any binary
+  operator; `add_messages` replaces a message when the id matches and drops messages on
+  `RemoveMessage`). So each derivation is *checked* against the element ids recorded per version
+  and comes out `verified`, `refuted` or `unverified`.
+
+How each observed relation is grounded (all fields are LangGraph's own):
 
 * Tasks scheduled from checkpoint C record their writes as `C.pending_writes`, a list of
   `(task_id, channel, value)`. That is the WRITE relation, and it names the task exactly.
@@ -36,7 +45,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import TYPE_CHECKING, Any, Optional
 
-from firebreak.provenance.capture import CHECKPOINT_FACT
+from firebreak.provenance.capture import CHECKPOINT_FACT, SENTINEL_CHANNELS
 
 if TYPE_CHECKING:  # avoids a cycle: the recorder pulls in this package to snapshot checkpoints
     from firebreak.tracing.recorder import Trace
@@ -77,6 +86,10 @@ class TaskRunRef:
     input_channels: list = field(default_factory=list)
     from_trace: bool = False
     from_checkpoint: bool = False
+    scheduled_from: Optional[str] = None  # checkpoint id the task read its state from
+    resolution: str = "unresolved"  # checkpoint_writes | step_alignment | unresolved
+    wrote: bool = False  # wrote at least one real state channel
+    outcome: Optional[str] = None  # error | no_writes | interrupt | ... from LangGraph's sentinel write
 
     @property
     def label(self) -> str:
@@ -121,14 +134,33 @@ class WriteRelation:
 
 @dataclass
 class DerivedRelation:
-    """version N+1 of a channel contains version N, because the channel accumulates."""
+    """The newer version of a folding channel, and whether it actually kept the older one.
+
+    verdict: `verified` (every element id of the older version is present in the newer),
+    `refuted` (some were dropped or replaced), `unverified` (element ids unavailable).
+    """
 
     state_key: str  # the newer version
     from_state_key: str  # the version it was folded onto
     evidence: Evidence
+    verdict: str = "unverified"
+    kept: Optional[int] = None
+    lost: list = field(default_factory=list)
+
+    @property
+    def evidence_class(self) -> str:
+        return "observed" if self.verdict == "verified" else "derived"
 
     def to_dict(self) -> dict:
-        return {"state": self.state_key, "derived_from": self.from_state_key, "evidence": self.evidence.to_dict()}
+        return {
+            "state": self.state_key,
+            "derived_from": self.from_state_key,
+            "verdict": self.verdict,
+            "evidence_class": self.evidence_class,
+            "kept": self.kept,
+            "lost_element_ids": list(self.lost),
+            "evidence": self.evidence.to_dict(),
+        }
 
 
 @dataclass
@@ -236,26 +268,97 @@ class ProvenanceGraph:
             }
             for f in facts
         ]
-        for index, current in enumerate(facts):
-            nxt = facts[index + 1] if index + 1 < len(facts) else None
-            writes = current.get("writes") or []
-            if not writes:
+        by_id = {str(f.get("checkpoint_id")): f for f in facts}
+        next_of = {str(facts[i].get("checkpoint_id")): facts[i + 1] for i in range(len(facts) - 1)}
+        by_step: dict[Any, dict] = {}
+        for fact in facts:
+            by_step.setdefault(fact.get("step"), fact)
+
+        scheduled = self._resolve_scheduling(facts, by_step)
+        for checkpoint_id, task_ids in scheduled.items():
+            current = by_id.get(checkpoint_id)
+            if current is None:
                 continue
-            # tasks scheduled from `current` are exactly the ones named in its writes
-            tasks_here: dict[str, set] = {}
-            for write in writes:
-                tasks_here.setdefault(write["task_id"], set()).add(write["channel"])
-                self._ensure_task(write["task_id"], current)
+            nxt = next_of.get(checkpoint_id)
+            self._add_state_reads(current, task_ids)
             if nxt is None:
+                if any(self.tasks[t].wrote for t in task_ids if t in self.tasks):
+                    self.warnings.append(
+                        f"checkpoint {checkpoint_id} has writes but no following checkpoint, so the "
+                        "versions they produced were never saved"
+                    )
+                continue
+            self._add_writes(current.get("writes") or [], current, nxt)
+            self._add_trigger_reads(current, nxt, task_ids)
+        for fact in facts:
+            nxt = next_of.get(str(fact.get("checkpoint_id")))
+            if nxt is not None:
+                self._add_derivations(fact, nxt)
+
+    def _resolve_scheduling(self, facts: list[dict], by_step: dict) -> dict:
+        """Which tasks ran from which checkpoint.
+
+        Task *identity* comes from the trace (`node_start` gives a task id, node and step for every
+        execution, including ones that wrote nothing or errored). A checkpoint's `pending_writes`
+        proves where a task that wrote ran, but it cannot decide membership: a task that read state
+        and then crashed, or returned no update, never appears there. Those are exactly the tasks a
+        fault analysis cares about, so they are placed by the step offset instead, which is
+        calibrated on the tasks where both signals exist rather than assumed.
+        """
+        scheduled: dict[str, list] = {}
+        exact: dict[str, str] = {}
+        for fact in facts:
+            checkpoint_id = str(fact.get("checkpoint_id"))
+            for write in fact.get("writes") or []:
+                task_id = write["task_id"]
+                run = self._ensure_task(task_id, fact)
+                sentinel = SENTINEL_CHANNELS.get(write["channel"])
+                if sentinel is not None:
+                    run.outcome = sentinel  # LangGraph's own record that the task failed / wrote nothing
+                else:
+                    run.wrote = True
+                if task_id in exact:
+                    continue
+                exact[task_id] = checkpoint_id
+                run.scheduled_from = checkpoint_id
+                run.resolution = "checkpoint_writes"
+                scheduled.setdefault(checkpoint_id, []).append(task_id)
+
+        offsets: dict[int, int] = {}
+        for task_id, checkpoint_id in exact.items():
+            run = self.tasks[task_id]
+            fact_step = next((f.get("step") for f in facts if str(f.get("checkpoint_id")) == checkpoint_id), None)
+            if run.from_trace and run.step is not None and fact_step is not None:
+                offsets[run.step - fact_step] = offsets.get(run.step - fact_step, 0) + 1
+        offset = max(offsets, key=offsets.get) if offsets else None
+        if len(offsets) > 1:
+            self.warnings.append(
+                f"the step offset between a task and the checkpoint it was scheduled from is not "
+                f"constant in this run ({offsets}); tasks that wrote nothing were placed with the "
+                f"most common value {offset}"
+            )
+
+        for run in self.tasks.values():
+            if run.scheduled_from is not None or not run.from_trace:
+                continue
+            if offset is None or run.step is None:
                 self.warnings.append(
-                    f"checkpoint {current.get('checkpoint_id')} has {len(writes)} writes but no "
-                    "following checkpoint, so the versions they produced were never saved"
+                    f"task {run.label} ({run.task_id}) made no write and could not be placed on a "
+                    "checkpoint, so it has no READ provenance"
                 )
                 continue
-            self._add_writes(writes, current, nxt)
-            self._add_state_reads(current, tasks_here)
-            self._add_trigger_reads(current, nxt, tasks_here)
-            self._add_derivations(current, nxt)
+            fact = by_step.get(run.step - offset)
+            if fact is None:
+                self.warnings.append(
+                    f"task {run.label} ({run.task_id}) made no write and no checkpoint exists at "
+                    f"step {run.step - offset}, so it has no READ provenance"
+                )
+                continue
+            checkpoint_id = str(fact.get("checkpoint_id"))
+            run.scheduled_from = checkpoint_id
+            run.resolution = "step_alignment"
+            scheduled.setdefault(checkpoint_id, []).append(run.task_id)
+        return scheduled
 
     def _ensure_task(self, task_id: str, fact: dict) -> TaskRunRef:
         run = self.tasks.get(task_id)
@@ -273,6 +376,8 @@ class ProvenanceGraph:
         next_versions = nxt.get("channel_versions") or {}
         for write in writes:
             channel = write["channel"]
+            if channel in SENTINEL_CHANNELS:
+                continue  # an outcome marker, not a state write; recorded on the task instead
             version = next_versions.get(channel)
             if version is None:
                 self.warnings.append(
@@ -301,7 +406,7 @@ class ProvenanceGraph:
                 )
             )
 
-    def _add_state_reads(self, current: dict, tasks_here: dict) -> None:
+    def _add_state_reads(self, current: dict, tasks_here: list) -> None:
         """A task scheduled from checkpoint C received C's version of each channel in its input.
 
         The channels come from the task's own recorded `input`; the versions come from the
@@ -333,20 +438,21 @@ class ProvenanceGraph:
                             version=version,
                             task_id=task_id,
                             node=run.node,
-                            note="the version this channel held in the checkpoint the task was scheduled from; "
-                            "the channel is one the task's recorded input carried",
+                            note="the version this channel held in the checkpoint the task was scheduled from "
+                            f"(placed by {run.resolution}); the channel is one the task's recorded input carried",
                         ),
                     )
                 )
 
-    def _add_trigger_reads(self, current: dict, nxt: dict, tasks_here: dict) -> None:
+    def _add_trigger_reads(self, current: dict, nxt: dict, tasks_here: list) -> None:
         """A node's `versions_seen` entry changing across a super-step is what triggered it."""
         before = current.get("versions_seen") or {}
         after = nxt.get("versions_seen") or {}
-        names_here = {self.tasks[t].node: [] for t in tasks_here if t in self.tasks}
+        names_here: dict[str, list] = {}
         for task_id in tasks_here:
-            node = self.tasks[task_id].node
-            names_here.setdefault(node, []).append(task_id)
+            run = self.tasks.get(task_id)
+            if run is not None:
+                names_here.setdefault(run.node, []).append(task_id)
         for node, seen_after in after.items():
             if node in INTERNAL_NODES:
                 continue
@@ -385,9 +491,16 @@ class ProvenanceGraph:
                 )
 
     def _add_derivations(self, current: dict, nxt: dict) -> None:
-        """For an accumulating channel, the next version was folded onto the current one."""
+        """Did the next version of a folding channel actually keep the current one?
+
+        Folding is not retention: `BinaryOperatorAggregate` takes any binary operator, and
+        `add_messages` replaces a message when the id matches and drops messages on
+        `RemoveMessage`. So the claim is checked against the element ids recorded per version.
+        """
         before = current.get("channel_versions") or {}
         after = nxt.get("channel_versions") or {}
+        elements_before = current.get("elements") or {}
+        elements_after = nxt.get("elements") or {}
         for channel, new_version in after.items():
             if channel not in self.accumulating:
                 continue  # a replacing channel: the old value is gone, no derivation to claim
@@ -398,25 +511,51 @@ class ProvenanceGraph:
             older = self.states.get(f"{channel}:{old_version}")
             if newer is None or older is None:
                 continue
+            old_ids = (elements_before.get(channel) or {}).get("ids")
+            new_ids = (elements_after.get(channel) or {}).get("ids")
+            if old_ids is None or new_ids is None:
+                verdict, kept, lost = "unverified", None, []
+                note = ("element ids were not recorded for this channel, so retention could not be "
+                        "checked; the channel only folds, which does not imply containment")
+            else:
+                present = set(new_ids)
+                lost = [i for i in old_ids if i not in present]
+                kept = len(old_ids) - len(lost)
+                verdict = "verified" if not lost else "refuted"
+                note = (f"all {kept} element ids of the earlier version are present in this one"
+                        if verdict == "verified"
+                        else f"{len(lost)} of {len(old_ids)} element ids were dropped or replaced")
             self.derived.append(
                 DerivedRelation(
                     state_key=newer.key,
                     from_state_key=older.key,
+                    verdict=verdict,
+                    kept=kept,
+                    lost=lost[:20],
                     evidence=Evidence(
-                        source="channel_versions across checkpoints + channel class",
+                        source="element ids recorded per version"
+                        if verdict != "unverified"
+                        else "channel class only",
                         checkpoint_id=str(nxt.get("checkpoint_id")),
                         step=nxt.get("step"),
                         channel=channel,
                         version=new_version,
-                        note=f"channel class {self.channel_types.get(channel, '?')} folds new writes onto "
-                        "the existing value, so this version contains the previous one",
+                        note=f"channel class {self.channel_types.get(channel, '?')}; {note}",
                     ),
                 )
             )
 
-    def derivation_ancestors(self, state_key: str) -> list:
-        """Versions this one accumulated from, oldest last. Recorded, not inferred."""
-        by_key = {d.state_key: d.from_state_key for d in self.derived}
+    def derivation_ancestors(self, state_key: str, verified_only: bool = True) -> list:
+        """Versions this one is known to still contain, oldest last.
+
+        By default the chain stops at the first derivation that could not be verified, so an
+        `accumulated` relation never rests on an assumption about the reducer.
+        """
+        by_key = {
+            d.state_key: d.from_state_key
+            for d in self.derived
+            if not verified_only or d.verdict == "verified"
+        }
         chain: list[str] = []
         current = by_key.get(state_key)
         while current is not None and current not in chain:
@@ -466,7 +605,9 @@ class ProvenanceGraph:
             state = self.states.get(read.state_key)
             if state is None:
                 continue
-            reachable = [(state.key, "direct")] + [(k, "accumulated") for k in self.derivation_ancestors(state.key)]
+            reachable = [(state.key, "direct")] + [
+                (k, "accumulated") for k in self.derivation_ancestors(state.key, verified_only=True)
+            ]
             for source_key, relation in reachable:
                 source = self.states.get(source_key)
                 if source is None:
@@ -497,6 +638,18 @@ class ProvenanceGraph:
             "write_relations": [w.to_dict() for w in self.writes],
             "read_relations": [r.to_dict() for r in self.reads],
             "derived_relations": [d.to_dict() for d in self.derived],
+            "derivation_verdicts": {
+                v: sum(1 for d in self.derived if d.verdict == v)
+                for v in ("verified", "refuted", "unverified")
+            },
+            "task_outcomes": {
+                o: sum(1 for t in self.tasks.values() if t.outcome == o)
+                for o in sorted({t.outcome for t in self.tasks.values() if t.outcome})
+            },
+            "task_resolution": {
+                r: sum(1 for t in self.tasks.values() if t.resolution == r)
+                for r in ("checkpoint_writes", "step_alignment", "unresolved")
+            },
             "channel_types": self.channel_types,
             "accumulating_channels": sorted(self.accumulating),
             "checkpoints": self.checkpoints,
