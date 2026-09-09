@@ -1,0 +1,33 @@
+flowchart LR
+  t___input____1__turn_0_(["__input__@-1 (turn 0)"])
+  t_supervisor_1__turn_0_["supervisor@1 (turn 0)"]
+  t_lookup_2__turn_0_["lookup@2 (turn 0)"]
+  t_supervisor_3__turn_0_["supervisor@3 (turn 0)"]
+  s_branch_to_supervisor_v2{{"branch:to:supervisor:v2"}}
+  s_messages_v2(("messages:v2"))
+  s_branch_to_lookup_v3{{"branch:to:lookup:v3"}}
+  s_messages_v3(("messages:v3"))
+  s_branch_to_supervisor_v4{{"branch:to:supervisor:v4"}}
+  s_messages_v4(("messages:v4"))
+  s_messages_v5(("messages:v5"))
+  x_out_0[/"turn 1<br/>messages:v7"/]
+  t___input____1__turn_0_ -->|WRITE| s_messages_v2
+  t___input____1__turn_0_ -->|WRITE| s_branch_to_supervisor_v2
+  t_supervisor_1__turn_0_ -->|WRITE| s_messages_v3
+  t_supervisor_1__turn_0_ -->|WRITE| s_branch_to_lookup_v3
+  t_lookup_2__turn_0_ -->|WRITE| s_messages_v4
+  t_lookup_2__turn_0_ -->|WRITE| s_branch_to_supervisor_v4
+  t_supervisor_3__turn_0_ -->|WRITE| s_messages_v5
+  s_messages_v2 -->|READ| t_supervisor_1__turn_0_
+  s_messages_v3 -->|READ| t_lookup_2__turn_0_
+  s_messages_v4 -->|READ| t_supervisor_3__turn_0_
+  s_branch_to_supervisor_v2 -.->|TRIGGER| t_supervisor_1__turn_0_
+  s_branch_to_lookup_v3 -.->|TRIGGER| t_lookup_2__turn_0_
+  s_branch_to_supervisor_v4 -.->|TRIGGER| t_supervisor_3__turn_0_
+  s_messages_v2 -. verified .-> s_messages_v3
+  s_messages_v3 -. verified .-> s_messages_v4
+  s_messages_v4 -. verified .-> s_messages_v5
+  s_messages_v5 -. derived · verified .-> x_out_0
+  classDef state fill:#fff3c4,stroke:#b8860b;
+  classDef boundary fill:#f0f0f0,stroke:#999,stroke-dasharray:3 3;
+  class s_branch_to_lookup_v3,s_branch_to_supervisor_v2,s_branch_to_supervisor_v4,s_messages_v2,s_messages_v3,s_messages_v4,s_messages_v5 state;

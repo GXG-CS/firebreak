@@ -16,6 +16,7 @@
       "resolution": "checkpoint_writes",
       "wrote": true,
       "outcome": null,
+      "tool_calls": [],
       "label": "__input__@-1 (turn 0)"
     },
     {
@@ -41,6 +42,7 @@
       "resolution": "checkpoint_writes",
       "wrote": true,
       "outcome": null,
+      "tool_calls": [],
       "label": "supervisor@1 (turn 0)"
     },
     {
@@ -59,6 +61,7 @@
       "resolution": "checkpoint_writes",
       "wrote": true,
       "outcome": null,
+      "tool_calls": [],
       "label": "__input__@2 (turn 1)"
     },
     {
@@ -84,6 +87,7 @@
       "resolution": "checkpoint_writes",
       "wrote": true,
       "outcome": null,
+      "tool_calls": [],
       "label": "supervisor@4 (turn 1)"
     },
     {
@@ -109,6 +113,104 @@
       "resolution": "checkpoint_writes",
       "wrote": true,
       "outcome": null,
+      "tool_calls": [
+        {
+          "order": 0,
+          "name": "get_user_details",
+          "args": {
+            "user_id": "amelia_davis_8890"
+          },
+          "outcome": "ok",
+          "result_sha1": "1fa8353cde49",
+          "result_preview": "{ \"user_id\": \"amelia_davis_8890\", \"name\": { \"first_name\": \"Amelia\", \"last_name\": \"Davis\" }, \"address\": { \"address1\": \"442 Sunset Drive\", \"address2\": \"Suite 708\", \"city\": \"San Diego\", \"country\": \"USA\",...",
+          "seq": 30,
+          "attribution": "checkpoint_ns"
+        },
+        {
+          "order": 1,
+          "name": "get_reservation_details",
+          "args": {
+            "reservation_id": "8C8K4E"
+          },
+          "outcome": "ok",
+          "result_sha1": "a8bc9185f43b",
+          "result_preview": "{ \"reservation_id\": \"8C8K4E\", \"user_id\": \"amelia_davis_8890\", \"origin\": \"BOS\", \"destination\": \"DEN\", \"flight_type\": \"one_way\", \"cabin\": \"business\", \"flights\": [ { \"flight_number\": \"HAT247\", \"origin\": ...",
+          "seq": 34,
+          "attribution": "checkpoint_ns"
+        },
+        {
+          "order": 2,
+          "name": "get_reservation_details",
+          "args": {
+            "reservation_id": "UDMOP1"
+          },
+          "outcome": "ok",
+          "result_sha1": "fd9427bc01f4",
+          "result_preview": "{ \"reservation_id\": \"UDMOP1\", \"user_id\": \"amelia_davis_8890\", \"origin\": \"SFO\", \"destination\": \"SFO\", \"flight_type\": \"round_trip\", \"cabin\": \"basic_economy\", \"flights\": [ { \"flight_number\": \"HAT134\", \"o...",
+          "seq": 36,
+          "attribution": "checkpoint_ns"
+        },
+        {
+          "order": 3,
+          "name": "get_reservation_details",
+          "args": {
+            "reservation_id": "XAZ3C0"
+          },
+          "outcome": "ok",
+          "result_sha1": "741fe2236e9b",
+          "result_preview": "{ \"reservation_id\": \"XAZ3C0\", \"user_id\": \"amelia_davis_8890\", \"origin\": \"ATL\", \"destination\": \"CLT\", \"flight_type\": \"one_way\", \"cabin\": \"basic_economy\", \"flights\": [ { \"flight_number\": \"HAT110\", \"orig...",
+          "seq": 38,
+          "attribution": "checkpoint_ns"
+        },
+        {
+          "order": 4,
+          "name": "get_reservation_details",
+          "args": {
+            "reservation_id": "LU15PA"
+          },
+          "outcome": "ok",
+          "result_sha1": "6ca2725c880a",
+          "result_preview": "{ \"reservation_id\": \"LU15PA\", \"user_id\": \"amelia_davis_8890\", \"origin\": \"SFO\", \"destination\": \"SFO\", \"flight_type\": \"one_way\", \"cabin\": \"business\", \"flights\": [ { \"flight_number\": \"HAT144\", \"origin\": ...",
+          "seq": 40,
+          "attribution": "checkpoint_ns"
+        },
+        {
+          "order": 5,
+          "name": "get_reservation_details",
+          "args": {
+            "reservation_id": "MSJ4OA"
+          },
+          "outcome": "ok",
+          "result_sha1": "9ecbbd6705f0",
+          "result_preview": "{ \"reservation_id\": \"MSJ4OA\", \"user_id\": \"amelia_davis_8890\", \"origin\": \"DFW\", \"destination\": \"SFO\", \"flight_type\": \"one_way\", \"cabin\": \"economy\", \"flights\": [ { \"flight_number\": \"HAT099\", \"origin\": \"...",
+          "seq": 42,
+          "attribution": "checkpoint_ns"
+        },
+        {
+          "order": 6,
+          "name": "get_reservation_details",
+          "args": {
+            "reservation_id": "I6M8JQ"
+          },
+          "outcome": "ok",
+          "result_sha1": "b9afd014f5c4",
+          "result_preview": "{ \"reservation_id\": \"I6M8JQ\", \"user_id\": \"amelia_davis_8890\", \"origin\": \"LAS\", \"destination\": \"EWR\", \"flight_type\": \"one_way\", \"cabin\": \"economy\", \"flights\": [ { \"flight_number\": \"HAT115\", \"origin\": \"...",
+          "seq": 44,
+          "attribution": "checkpoint_ns"
+        },
+        {
+          "order": 7,
+          "name": "get_reservation_details",
+          "args": {
+            "reservation_id": "4XGCCM"
+          },
+          "outcome": "ok",
+          "result_sha1": "a63a0f74640b",
+          "result_preview": "{ \"reservation_id\": \"4XGCCM\", \"user_id\": \"amelia_davis_8890\", \"origin\": \"IAH\", \"destination\": \"DTW\", \"flight_type\": \"round_trip\", \"cabin\": \"business\", \"flights\": [ { \"flight_number\": \"HAT116\", \"origin...",
+          "seq": 46,
+          "attribution": "checkpoint_ns"
+        }
+      ],
       "label": "lookup@5 (turn 1)"
     },
     {
@@ -134,6 +236,7 @@
       "resolution": "checkpoint_writes",
       "wrote": true,
       "outcome": null,
+      "tool_calls": [],
       "label": "supervisor@6 (turn 1)"
     },
     {
@@ -152,6 +255,7 @@
       "resolution": "checkpoint_writes",
       "wrote": true,
       "outcome": null,
+      "tool_calls": [],
       "label": "__input__@7 (turn 2)"
     },
     {
@@ -177,6 +281,7 @@
       "resolution": "checkpoint_writes",
       "wrote": true,
       "outcome": null,
+      "tool_calls": [],
       "label": "supervisor@9 (turn 2)"
     },
     {
@@ -202,6 +307,44 @@
       "resolution": "checkpoint_writes",
       "wrote": true,
       "outcome": null,
+      "tool_calls": [
+        {
+          "order": 0,
+          "name": "cancel_reservation",
+          "args": {
+            "reservation_id": "8C8K4E"
+          },
+          "outcome": "ok",
+          "result_sha1": "b2cca9b58eb2",
+          "result_preview": "{ \"reservation_id\": \"8C8K4E\", \"user_id\": \"amelia_davis_8890\", \"origin\": \"BOS\", \"destination\": \"DEN\", \"flight_type\": \"one_way\", \"cabin\": \"business\", \"flights\": [ { \"flight_number\": \"HAT247\", \"origin\": ...",
+          "seq": 82,
+          "attribution": "checkpoint_ns"
+        },
+        {
+          "order": 1,
+          "name": "cancel_reservation",
+          "args": {
+            "reservation_id": "LU15PA"
+          },
+          "outcome": "ok",
+          "result_sha1": "ebcff16fd06c",
+          "result_preview": "{ \"reservation_id\": \"LU15PA\", \"user_id\": \"amelia_davis_8890\", \"origin\": \"SFO\", \"destination\": \"SFO\", \"flight_type\": \"one_way\", \"cabin\": \"business\", \"flights\": [ { \"flight_number\": \"HAT144\", \"origin\": ...",
+          "seq": 84,
+          "attribution": "checkpoint_ns"
+        },
+        {
+          "order": 2,
+          "name": "cancel_reservation",
+          "args": {
+            "reservation_id": "MSJ4OA"
+          },
+          "outcome": "ok",
+          "result_sha1": "5bb9f2e71c73",
+          "result_preview": "{ \"reservation_id\": \"MSJ4OA\", \"user_id\": \"amelia_davis_8890\", \"origin\": \"DFW\", \"destination\": \"SFO\", \"flight_type\": \"one_way\", \"cabin\": \"economy\", \"flights\": [ { \"flight_number\": \"HAT099\", \"origin\": \"...",
+          "seq": 86,
+          "attribution": "checkpoint_ns"
+        }
+      ],
       "label": "booking@10 (turn 2)"
     },
     {
@@ -227,6 +370,7 @@
       "resolution": "checkpoint_writes",
       "wrote": true,
       "outcome": null,
+      "tool_calls": [],
       "label": "supervisor@11 (turn 2)"
     }
   ],
@@ -904,13 +1048,16 @@
       "evidence_class": "observed",
       "kept": 1,
       "lost_element_ids": [],
+      "new_element_ids": [
+        "lc_run--01a07ef3-3cd6-7612-a375-0ac19777dcbf-0"
+      ],
       "evidence": {
         "source": "element ids recorded per version",
         "checkpoint_id": "1f1ab311-1cc7-6f79-8001-b6c74965b4ea",
         "step": 1,
         "channel": "messages",
         "version": "00000000000000000000000000000003.0.7368290366656945",
-        "note": "channel class BinaryOperatorAggregate; all 1 element ids of the earlier version are present in this one"
+        "note": "channel class BinaryOperatorAggregate; all 1 element ids of the earlier version are present in this one; 1 introduced here"
       }
     },
     {
@@ -920,13 +1067,16 @@
       "evidence_class": "observed",
       "kept": 2,
       "lost_element_ids": [],
+      "new_element_ids": [
+        "a3ed0328-36ef-48cb-b1a3-5e7570f3a29b"
+      ],
       "evidence": {
         "source": "element ids recorded per version",
         "checkpoint_id": "1f1ab311-2196-6e3a-8003-8ce35a02028a",
         "step": 3,
         "channel": "messages",
         "version": "00000000000000000000000000000005.0.4251445223825404",
-        "note": "channel class BinaryOperatorAggregate; all 2 element ids of the earlier version are present in this one"
+        "note": "channel class BinaryOperatorAggregate; all 2 element ids of the earlier version are present in this one; 1 introduced here"
       }
     },
     {
@@ -936,13 +1086,16 @@
       "evidence_class": "observed",
       "kept": 3,
       "lost_element_ids": [],
+      "new_element_ids": [
+        "lc_run--01a07ef3-4435-7570-820a-83d578c444c5-0"
+      ],
       "evidence": {
         "source": "element ids recorded per version",
         "checkpoint_id": "1f1ab311-2f4b-6573-8004-5da1dda42928",
         "step": 4,
         "channel": "messages",
         "version": "00000000000000000000000000000006.0.12910927027256547",
-        "note": "channel class BinaryOperatorAggregate; all 3 element ids of the earlier version are present in this one"
+        "note": "channel class BinaryOperatorAggregate; all 3 element ids of the earlier version are present in this one; 1 introduced here"
       }
     },
     {
@@ -952,13 +1105,16 @@
       "evidence_class": "observed",
       "kept": 4,
       "lost_element_ids": [],
+      "new_element_ids": [
+        "aad6b09e-d4dd-4007-971c-c0c9be69d6e7"
+      ],
       "evidence": {
         "source": "element ids recorded per version",
         "checkpoint_id": "1f1ab311-b7dc-6a2d-8005-a9d0577e152b",
         "step": 5,
         "channel": "messages",
         "version": "00000000000000000000000000000007.0.7592445727788985",
-        "note": "channel class BinaryOperatorAggregate; all 4 element ids of the earlier version are present in this one"
+        "note": "channel class BinaryOperatorAggregate; all 4 element ids of the earlier version are present in this one; 1 introduced here"
       }
     },
     {
@@ -968,13 +1124,16 @@
       "evidence_class": "observed",
       "kept": 5,
       "lost_element_ids": [],
+      "new_element_ids": [
+        "lc_run--01a07ef3-81c1-7be2-b615-952f001207ac-0"
+      ],
       "evidence": {
         "source": "element ids recorded per version",
         "checkpoint_id": "1f1ab311-ce5f-67e8-8006-a8aa11756dae",
         "step": 6,
         "channel": "messages",
         "version": "00000000000000000000000000000008.0.652857166073468",
-        "note": "channel class BinaryOperatorAggregate; all 5 element ids of the earlier version are present in this one"
+        "note": "channel class BinaryOperatorAggregate; all 5 element ids of the earlier version are present in this one; 1 introduced here"
       }
     },
     {
@@ -984,13 +1143,16 @@
       "evidence_class": "observed",
       "kept": 6,
       "lost_element_ids": [],
+      "new_element_ids": [
+        "3c74861b-6ab4-4bc8-a8b2-20bca05fce0f"
+      ],
       "evidence": {
         "source": "element ids recorded per version",
         "checkpoint_id": "1f1ab311-dc7a-6e35-8008-fc6b27144ed3",
         "step": 8,
         "channel": "messages",
         "version": "00000000000000000000000000000010.0.00017371187496229012",
-        "note": "channel class BinaryOperatorAggregate; all 6 element ids of the earlier version are present in this one"
+        "note": "channel class BinaryOperatorAggregate; all 6 element ids of the earlier version are present in this one; 1 introduced here"
       }
     },
     {
@@ -1000,13 +1162,16 @@
       "evidence_class": "observed",
       "kept": 7,
       "lost_element_ids": [],
+      "new_element_ids": [
+        "lc_run--01a07ef3-90c1-7a50-b61b-00e29e5d56d0-0"
+      ],
       "evidence": {
         "source": "element ids recorded per version",
         "checkpoint_id": "1f1ab311-f85b-60fd-8009-bd3ebc937eb1",
         "step": 9,
         "channel": "messages",
         "version": "00000000000000000000000000000011.0.0337103508337645",
-        "note": "channel class BinaryOperatorAggregate; all 7 element ids of the earlier version are present in this one"
+        "note": "channel class BinaryOperatorAggregate; all 7 element ids of the earlier version are present in this one; 1 introduced here"
       }
     },
     {
@@ -1016,13 +1181,16 @@
       "evidence_class": "observed",
       "kept": 8,
       "lost_element_ids": [],
+      "new_element_ids": [
+        "395ba667-fcc0-45c5-8349-f81e99670176"
+      ],
       "evidence": {
         "source": "element ids recorded per version",
         "checkpoint_id": "1f1ab312-7647-6726-800a-3afafde42129",
         "step": 10,
         "channel": "messages",
         "version": "00000000000000000000000000000012.0.7176290678833201",
-        "note": "channel class BinaryOperatorAggregate; all 8 element ids of the earlier version are present in this one"
+        "note": "channel class BinaryOperatorAggregate; all 8 element ids of the earlier version are present in this one; 1 introduced here"
       }
     },
     {
@@ -1032,13 +1200,16 @@
       "evidence_class": "observed",
       "kept": 9,
       "lost_element_ids": [],
+      "new_element_ids": [
+        "lc_run--01a07ef3-cfc1-7d20-a562-c75a0e49fc45-0"
+      ],
       "evidence": {
         "source": "element ids recorded per version",
         "checkpoint_id": "1f1ab312-89d9-6740-800b-a2a2e9c84df0",
         "step": 11,
         "channel": "messages",
         "version": "00000000000000000000000000000013.0.08243108506223051",
-        "note": "channel class BinaryOperatorAggregate; all 9 element ids of the earlier version are present in this one"
+        "note": "channel class BinaryOperatorAggregate; all 9 element ids of the earlier version are present in this one; 1 introduced here"
       }
     }
   ],

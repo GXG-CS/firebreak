@@ -14,6 +14,11 @@ from pathlib import Path
 from firebreak.tracing.recorder import Trace
 
 
+def _tool_names(raw: str | None) -> list:
+    """Tool names the caller declared as changing state outside the process."""
+    return [name.strip() for name in (raw or "").split(",") if name.strip()]
+
+
 def _cmd_trace(args: argparse.Namespace) -> int:
     """Capture, read back: what each runtime source reported, per task execution."""
     from firebreak.tracing.view import render_trace
@@ -33,8 +38,11 @@ def _cmd_trace(args: argparse.Namespace) -> int:
 def _cmd_episode(args: argparse.Namespace) -> int:
     """Project a capture into the episode / turn hierarchy."""
     from scripts.dump_episode import dump  # noqa: PLC0415 - the script owns the output layout
+    from scripts.dump_provenance import load_evaluation  # noqa: PLC0415
 
-    written = dump(Path(args.trace), with_json=args.json)
+    written = dump(Path(args.trace), with_json=args.json,
+                   evaluation=load_evaluation(Path(args.evaluation) if args.evaluation else None),
+                   mutating_tools=_tool_names(args.mutating_tools))
     print(f"{args.trace}  ->  {', '.join(w.name for w in written)}")
     if not args.quiet:
         print()
@@ -44,9 +52,11 @@ def _cmd_episode(args: argparse.Namespace) -> int:
 
 def _cmd_provenance(args: argparse.Namespace) -> int:
     """The evidence underneath the structure: WRITE, READ, TRIGGER, DERIVED_FROM."""
-    from scripts.dump_provenance import dump  # noqa: PLC0415 - the script owns the output layout
+    from scripts.dump_provenance import dump, load_evaluation  # noqa: PLC0415
 
-    written = dump(Path(args.trace))
+    written = dump(Path(args.trace),
+                   evaluation=load_evaluation(Path(args.evaluation) if args.evaluation else None),
+                   mutating_tools=_tool_names(args.mutating_tools))
     print(f"{args.trace}  ->  {', '.join(w.name for w in written)}")
     if not args.quiet:
         for out in written:
@@ -72,11 +82,19 @@ def build_parser() -> argparse.ArgumentParser:
     episode = sub.add_parser("episode", help="the episode / turn hierarchy (.episode.md)")
     episode.add_argument("trace", help="path to a JSONL trace")
     episode.add_argument("--json", action="store_true", help="also write <trace>.episode.json")
+    episode.add_argument("--eval", dest="evaluation", default=None,
+                         help="a run summary JSON whose evaluator scores are shown on the page")
+    episode.add_argument("--mutating-tools", default="",
+                         help="comma-separated tool names that change state outside the process")
     episode.add_argument("--quiet", action="store_true", help="write the files without printing them")
     episode.set_defaults(func=_cmd_episode)
 
     prov = sub.add_parser("provenance", help="the relation-level evidence (.provenance.json / .txt / .md)")
     prov.add_argument("trace", help="path to a JSONL trace")
+    prov.add_argument("--eval", dest="evaluation", default=None,
+                      help="a run summary JSON whose evaluator scores are shown on the page")
+    prov.add_argument("--mutating-tools", default="",
+                      help="comma-separated tool names that change state outside the process")
     prov.add_argument("--quiet", action="store_true", help="write the files without printing them")
     prov.set_defaults(func=_cmd_provenance)
     return parser

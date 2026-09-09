@@ -1,0 +1,13 @@
+flowchart LR
+  turn_0["<b>turn 0</b><br/>3 agent tasks · steps -1–3<br/>36 events · 5 checkpoints"]
+  turn_1["<b>turn 1</b><br/>3 agent tasks · steps 4–8<br/>46 events · 5 checkpoints"]
+  turn_2["<b>turn 2</b><br/>1 agent tasks · steps 9–11<br/>14 events · 3 checkpoints"]
+  turn_3["<b>turn 3</b><br/>1 agent tasks · steps 12–14<br/>14 events · 3 checkpoints"]
+  turn_0 -.->|next| turn_1
+  turn_1 -.->|next| turn_2
+  turn_2 -.->|next| turn_3
+  turn_0 ==>|derived_from · verified<br/>messages:v5| turn_1
+  turn_1 ==>|derived_from · verified<br/>messages:v10| turn_2
+  turn_2 ==>|derived_from · verified<br/>messages:v13| turn_3
+  classDef turn fill:#eef7ff,stroke:#4477aa;
+  class turn_0,turn_1,turn_2,turn_3 turn;

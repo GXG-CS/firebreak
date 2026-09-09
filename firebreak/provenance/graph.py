@@ -45,7 +45,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import TYPE_CHECKING, Any
 
-from firebreak.provenance.capture import CHECKPOINT_FACT, SENTINEL_CHANNELS
+from firebreak.provenance.capture import CHECKPOINT_FACT, SENTINEL_CHANNELS, _digest, _preview
+from firebreak.tracing.grouping import task_id_from_checkpoint_ns
 
 if TYPE_CHECKING:  # avoids a cycle: the recorder pulls in this package to snapshot checkpoints
     from firebreak.tracing.recorder import Trace
@@ -90,6 +91,11 @@ class TaskRunRef:
     resolution: str = "unresolved"  # checkpoint_writes | step_alignment | unresolved
     wrote: bool = False  # wrote at least one real state channel
     outcome: str | None = None  # error | no_writes | interrupt | ... from LangGraph's sentinel write
+    # Tools this task ran, in call order. A worker's tool loop happens *inside* one task, so these
+    # never appear in the checkpoint record; they are the task's only contact with the outside
+    # world. Arguments are kept in full (they are small and identify the effect); results are kept
+    # as a digest and a short preview, because the full text is already in the trace.
+    tool_calls: list = field(default_factory=list)
 
     @property
     def label(self) -> str:
@@ -138,6 +144,11 @@ class DerivedRelation:
 
     verdict: `verified` (every element id of the older version is present in the newer),
     `refuted` (some were dropped or replaced), `unverified` (element ids unavailable).
+
+    `kept`, `lost` and `new` all describe the same comparison between two versions, which is why
+    they live on the relation rather than on either version: how much of the older version
+    survived, what disappeared, and what this step introduced. `new` is the delta of the step,
+    not the input of the task that read the newer version -- a task reads the whole version.
     """
 
     state_key: str  # the newer version
@@ -146,6 +157,7 @@ class DerivedRelation:
     verdict: str = "unverified"
     kept: int | None = None
     lost: list = field(default_factory=list)
+    new: list = field(default_factory=list)
 
     @property
     def evidence_class(self) -> str:
@@ -159,6 +171,7 @@ class DerivedRelation:
             "evidence_class": self.evidence_class,
             "kept": self.kept,
             "lost_element_ids": list(self.lost),
+            "new_element_ids": list(self.new),
             "evidence": self.evidence.to_dict(),
         }
 
@@ -210,6 +223,7 @@ class ProvenanceGraph:
         graph.channel_types = dict(trace.meta.get("channel_types") or {})
         graph.accumulating = set(trace.meta.get("accumulating_channels") or [])
         graph._load_tasks_from_trace(trace)
+        graph._load_tool_calls_from_trace(trace)
         facts = graph._load_checkpoints(trace)
         if not facts:
             graph.warnings.append(
@@ -244,6 +258,61 @@ class ProvenanceGraph:
             if run is not None:
                 run.checkpoint_ns = run.checkpoint_ns or extra.get("checkpoint_ns")
                 run.path = run.path or extra.get("path")
+
+    def _load_tool_calls_from_trace(self, trace: Trace) -> None:
+        """Attach every tool invocation to the task run that made it.
+
+        A worker's tool loop runs *inside* one node, so these calls never reach a checkpoint:
+        LangGraph records the task's writes, not what the task did on its way there. They are
+        still recorded facts, and they are the task's only contact with the outside world.
+
+        Attribution is read, not guessed. Tool events carry no `task_id` -- the LangChain callback
+        has none -- but any run started inside a node carries the checkpoint namespace LangGraph
+        built for that task, and the task id is the segment after its final `:`. `tool_start` and
+        `tool_end` are paired by `run_id`, so calls that interleave stay apart. If neither the
+        namespace nor `(node, step)` resolves a task, the call is counted as unattributed and said
+        so in the warnings, rather than being hung on the nearest plausible task.
+        """
+        finished: dict = {}
+        for event in trace.events:
+            if event.kind in ("tool_end", "tool_error") and event.run_id:
+                finished[str(event.run_id)] = event
+
+        unattributed = 0
+        for event in trace.events:
+            if event.kind != "tool_start":
+                continue
+            namespace = (event.payload.get("langgraph") or {}).get("checkpoint_ns")
+            task_id = task_id_from_checkpoint_ns(namespace)
+            run = self.tasks.get(task_id) if task_id else None
+            attribution = "checkpoint_ns"
+            if run is None:
+                run = self._task_by_node_step(event.node, event.step)
+                attribution = "node_step"
+            if run is None:
+                unattributed += 1
+                continue
+            done = finished.get(str(event.run_id)) if event.run_id else None
+            result = None
+            if done is not None:
+                result = done.payload.get("output")
+                if result is None:
+                    result = done.payload.get("error")
+            run.tool_calls.append({
+                "order": len(run.tool_calls),
+                "name": event.name,
+                "args": event.payload.get("input"),
+                "outcome": "unfinished" if done is None else ("error" if done.kind == "tool_error" else "ok"),
+                "result_sha1": None if result is None else _digest(result),
+                "result_preview": None if result is None else _preview(result),
+                "seq": event.seq,
+                "attribution": attribution,
+            })
+        if unattributed:
+            self.warnings.append(
+                f"{unattributed} tool call(s) carried neither a resolvable checkpoint namespace nor "
+                "a matching (node, step), so they are not attached to any task run"
+            )
 
     def _task_by_node_step(self, node: str | None, step: int | None) -> TaskRunRef | None:
         for run in self.tasks.values():
@@ -526,17 +595,20 @@ class ProvenanceGraph:
             old_ids = (elements_before.get(channel) or {}).get("ids")
             new_ids = (elements_after.get(channel) or {}).get("ids")
             if old_ids is None or new_ids is None:
-                verdict, kept, lost = "unverified", None, []
+                verdict, kept, lost, introduced = "unverified", None, [], []
                 note = ("element ids were not recorded for this channel, so retention could not be "
                         "checked; the channel only folds, which does not imply containment")
             else:
                 present = set(new_ids)
+                previous = set(old_ids)
                 lost = [i for i in old_ids if i not in present]
+                introduced = [i for i in new_ids if i not in previous]
                 kept = len(old_ids) - len(lost)
                 verdict = "verified" if not lost else "refuted"
                 note = (f"all {kept} element ids of the earlier version are present in this one"
                         if verdict == "verified"
                         else f"{len(lost)} of {len(old_ids)} element ids were dropped or replaced")
+                note = f"{note}; {len(introduced)} introduced here"
             self.derived.append(
                 DerivedRelation(
                     state_key=newer.key,
@@ -544,6 +616,7 @@ class ProvenanceGraph:
                     verdict=verdict,
                     kept=kept,
                     lost=lost[:20],
+                    new=introduced[:20],
                     evidence=Evidence(
                         source="element ids recorded per version"
                         if verdict != "unverified"

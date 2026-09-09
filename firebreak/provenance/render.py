@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from firebreak.provenance.content import format_args, short
 from firebreak.provenance.graph import ProvenanceGraph
 
 
@@ -111,6 +112,25 @@ def render_text(prov: ProvenanceGraph, trace: Any = None, source_name: str = "")
             "wrote no state.")
     add("")
 
+    with_tools = [t for t in prov.tasks.values() if t.tool_calls]
+    if with_tools:
+        add("## Tool calls, per task run")
+        add("")
+        add("  These happen inside a task, between its read and its write, so no checkpoint records")
+        add("  them. Each is attached to its task through the checkpoint namespace LangGraph built")
+        add("  for that task; `by` says how the attribution was resolved.")
+        add("")
+        for run in sorted(with_tools, key=lambda t: (t.step is None, t.step or 0, t.node)):
+            add(f"{run.label}")
+            for call in run.tool_calls:
+                add(f"  {call.get('order', 0) + 1:>2}. {call.get('name')}"
+                    f"({format_args(call.get('args'), 160)})")
+                add(f"      -> {call.get('outcome')}  sha1={call.get('result_sha1')}  "
+                    f"by={call.get('attribution')}")
+                if call.get("result_preview"):
+                    add(f"      {short(call['result_preview'], 160)}")
+        add("")
+
     add("## Provenance, per state version")
     add("")
     add("  TaskRun --WRITE--> StateVersion --READ--> TaskRun")
@@ -126,7 +146,8 @@ def render_text(prov: ProvenanceGraph, trace: Any = None, source_name: str = "")
             add(f"  DERIVED_FROM {_short(older.version) if older else derived.from_state_key}"
                 f"   verdict={derived.verdict}"
                 + (f" kept={derived.kept}" if derived.kept is not None else "")
-                + (f" lost={len(derived.lost)}" if derived.lost else ""))
+                + (f" lost={len(derived.lost)}" if derived.lost else "")
+                + (f" new={len(derived.new)}" if derived.verdict != "unverified" else ""))
             add(f"      evidence: {derived.evidence.source}  checkpoint={derived.evidence.checkpoint_id}")
             if derived.evidence.note:
                 add(f"      note: {derived.evidence.note}")
@@ -168,12 +189,12 @@ def render_text(prov: ProvenanceGraph, trace: Any = None, source_name: str = "")
         left = (prov.task_label(producers[0]) if len(producers) == 1
                 else "{" + ", ".join(prov.task_label(p) for p in producers) + "}" if producers
                 else "(no observed producer)")
-        short = f"{state.channel}:{_short(state.version)}"
+        carrier = f"{state.channel}:{_short(state.version)}"
         for read in prov.reads_of(key):
             if read.kind != "state":
                 continue
             right = " | ".join(prov.task_label(t) for t in read.task_ids) or f"{read.node}?"
-            add(f"  {left:<26} --{short:<22}--> {right}")
+            add(f"  {left:<26} --{carrier:<22}--> {right}")
     add("")
 
     add("## What this cannot say yet")

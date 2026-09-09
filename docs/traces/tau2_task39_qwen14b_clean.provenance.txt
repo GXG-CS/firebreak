@@ -56,6 +56,48 @@ Two kinds of read, kept apart because LangGraph records them differently:
   booking@10 (turn 2)        5ce1baa6-855e-44bb-9133-be97eba7e992        2    10 yes    -          checkpoint_writes branch:to:booking
   supervisor@11 (turn 2)     aba3c0ce-49bc-14cb-60b6-a2c5a62d8d25        2    11 yes    -          checkpoint_writes branch:to:supervisor
 
+## Tool calls, per task run
+
+  These happen inside a task, between its read and its write, so no checkpoint records
+  them. Each is attached to its task through the checkpoint namespace LangGraph built
+  for that task; `by` says how the attribution was resolved.
+
+lookup@5 (turn 1)
+   1. get_user_details(user_id='amelia_davis_8890')
+      -> ok  sha1=1fa8353cde49  by=checkpoint_ns
+      { "user_id": "amelia_davis_8890", "name": { "first_name": "Amelia", "last_name": "Davis" }, "address": { "address1": "442 Sunset Drive", "address2": "Suite 708" […]
+   2. get_reservation_details(reservation_id='8C8K4E')
+      -> ok  sha1=a8bc9185f43b  by=checkpoint_ns
+      { "reservation_id": "8C8K4E", "user_id": "amelia_davis_8890", "origin": "BOS", "destination": "DEN", "flight_type": "one_way", "cabin": "business", "flights": [ […]
+   3. get_reservation_details(reservation_id='UDMOP1')
+      -> ok  sha1=fd9427bc01f4  by=checkpoint_ns
+      { "reservation_id": "UDMOP1", "user_id": "amelia_davis_8890", "origin": "SFO", "destination": "SFO", "flight_type": "round_trip", "cabin": "basic_economy", "fli […]
+   4. get_reservation_details(reservation_id='XAZ3C0')
+      -> ok  sha1=741fe2236e9b  by=checkpoint_ns
+      { "reservation_id": "XAZ3C0", "user_id": "amelia_davis_8890", "origin": "ATL", "destination": "CLT", "flight_type": "one_way", "cabin": "basic_economy", "flight […]
+   5. get_reservation_details(reservation_id='LU15PA')
+      -> ok  sha1=6ca2725c880a  by=checkpoint_ns
+      { "reservation_id": "LU15PA", "user_id": "amelia_davis_8890", "origin": "SFO", "destination": "SFO", "flight_type": "one_way", "cabin": "business", "flights": [ […]
+   6. get_reservation_details(reservation_id='MSJ4OA')
+      -> ok  sha1=9ecbbd6705f0  by=checkpoint_ns
+      { "reservation_id": "MSJ4OA", "user_id": "amelia_davis_8890", "origin": "DFW", "destination": "SFO", "flight_type": "one_way", "cabin": "economy", "flights": [  […]
+   7. get_reservation_details(reservation_id='I6M8JQ')
+      -> ok  sha1=b9afd014f5c4  by=checkpoint_ns
+      { "reservation_id": "I6M8JQ", "user_id": "amelia_davis_8890", "origin": "LAS", "destination": "EWR", "flight_type": "one_way", "cabin": "economy", "flights": [  […]
+   8. get_reservation_details(reservation_id='4XGCCM')
+      -> ok  sha1=a63a0f74640b  by=checkpoint_ns
+      { "reservation_id": "4XGCCM", "user_id": "amelia_davis_8890", "origin": "IAH", "destination": "DTW", "flight_type": "round_trip", "cabin": "business", "flights" […]
+booking@10 (turn 2)
+   1. cancel_reservation(reservation_id='8C8K4E')
+      -> ok  sha1=b2cca9b58eb2  by=checkpoint_ns
+      { "reservation_id": "8C8K4E", "user_id": "amelia_davis_8890", "origin": "BOS", "destination": "DEN", "flight_type": "one_way", "cabin": "business", "flights": [ […]
+   2. cancel_reservation(reservation_id='LU15PA')
+      -> ok  sha1=ebcff16fd06c  by=checkpoint_ns
+      { "reservation_id": "LU15PA", "user_id": "amelia_davis_8890", "origin": "SFO", "destination": "SFO", "flight_type": "one_way", "cabin": "business", "flights": [ […]
+   3. cancel_reservation(reservation_id='MSJ4OA')
+      -> ok  sha1=5bb9f2e71c73  by=checkpoint_ns
+      { "reservation_id": "MSJ4OA", "user_id": "amelia_davis_8890", "origin": "DFW", "destination": "SFO", "flight_type": "one_way", "cabin": "economy", "flights": [  […]
+
 ## Provenance, per state version
 
   TaskRun --WRITE--> StateVersion --READ--> TaskRun
@@ -82,9 +124,9 @@ STATE messages:00000000000000000000000000000002.0.12064815313111954
 
 STATE messages:00000000000000000000000000000003.0.7368290366656945
   born in checkpoint 1f1ab311-1cc7-6f79-8001-b6c74965b4ea  step 1
-  DERIVED_FROM v2.1206   verdict=verified kept=1
+  DERIVED_FROM v2.1206   verdict=verified kept=1 new=1
       evidence: element ids recorded per version  checkpoint=1f1ab311-1cc7-6f79-8001-b6c74965b4ea
-      note: channel class BinaryOperatorAggregate; all 1 element ids of the earlier version are present in this one
+      note: channel class BinaryOperatorAggregate; all 1 element ids of the earlier version are present in this one; 1 introduced here
   WRITTEN BY
     supervisor@1 (turn 0)      task_id=f80c8b4c-eb29-9dcd-b166-f4fa5c848c8d
       evidence: checkpoint.pending_writes  checkpoint=1f1ab311-0f97-69a1-8000-e23c1401116c  step=0  channel=messages  value_sha1=c72b61dec33a
@@ -102,9 +144,9 @@ STATE branch:to:supervisor:00000000000000000000000000000005.0.4251445223825404
 
 STATE messages:00000000000000000000000000000005.0.4251445223825404
   born in checkpoint 1f1ab311-2196-6e3a-8003-8ce35a02028a  step 3
-  DERIVED_FROM v3.7368   verdict=verified kept=2
+  DERIVED_FROM v3.7368   verdict=verified kept=2 new=1
       evidence: element ids recorded per version  checkpoint=1f1ab311-2196-6e3a-8003-8ce35a02028a
-      note: channel class BinaryOperatorAggregate; all 2 element ids of the earlier version are present in this one
+      note: channel class BinaryOperatorAggregate; all 2 element ids of the earlier version are present in this one; 1 introduced here
   WRITTEN BY
     __input__@2 (turn 1)       task_id=3266dae1-93da-26e3-adac-668564ab4dbe
       evidence: checkpoint.pending_writes  checkpoint=1f1ab311-2193-6ae2-8002-4df9473dfe1e  step=2  channel=messages  value_sha1=f7c28d3ac113
@@ -125,9 +167,9 @@ STATE branch:to:lookup:00000000000000000000000000000006.0.12910927027256547
 
 STATE messages:00000000000000000000000000000006.0.12910927027256547
   born in checkpoint 1f1ab311-2f4b-6573-8004-5da1dda42928  step 4
-  DERIVED_FROM v5.4251   verdict=verified kept=3
+  DERIVED_FROM v5.4251   verdict=verified kept=3 new=1
       evidence: element ids recorded per version  checkpoint=1f1ab311-2f4b-6573-8004-5da1dda42928
-      note: channel class BinaryOperatorAggregate; all 3 element ids of the earlier version are present in this one
+      note: channel class BinaryOperatorAggregate; all 3 element ids of the earlier version are present in this one; 1 introduced here
   WRITTEN BY
     supervisor@4 (turn 1)      task_id=5ab04f19-da84-0a55-42ca-169f58cb369a
       evidence: checkpoint.pending_writes  checkpoint=1f1ab311-2196-6e3a-8003-8ce35a02028a  step=3  channel=messages  value_sha1=abd553bbbf71
@@ -148,9 +190,9 @@ STATE branch:to:supervisor:00000000000000000000000000000007.0.7592445727788985
 
 STATE messages:00000000000000000000000000000007.0.7592445727788985
   born in checkpoint 1f1ab311-b7dc-6a2d-8005-a9d0577e152b  step 5
-  DERIVED_FROM v6.1291   verdict=verified kept=4
+  DERIVED_FROM v6.1291   verdict=verified kept=4 new=1
       evidence: element ids recorded per version  checkpoint=1f1ab311-b7dc-6a2d-8005-a9d0577e152b
-      note: channel class BinaryOperatorAggregate; all 4 element ids of the earlier version are present in this one
+      note: channel class BinaryOperatorAggregate; all 4 element ids of the earlier version are present in this one; 1 introduced here
   WRITTEN BY
     lookup@5 (turn 1)          task_id=2a0cbb7b-e3af-43f8-925c-7f9b3bf7636c
       evidence: checkpoint.pending_writes  checkpoint=1f1ab311-2f4b-6573-8004-5da1dda42928  step=4  channel=messages  value_sha1=f36c251d8fce
@@ -161,9 +203,9 @@ STATE messages:00000000000000000000000000000007.0.7592445727788985
 
 STATE messages:00000000000000000000000000000008.0.652857166073468
   born in checkpoint 1f1ab311-ce5f-67e8-8006-a8aa11756dae  step 6
-  DERIVED_FROM v7.7592   verdict=verified kept=5
+  DERIVED_FROM v7.7592   verdict=verified kept=5 new=1
       evidence: element ids recorded per version  checkpoint=1f1ab311-ce5f-67e8-8006-a8aa11756dae
-      note: channel class BinaryOperatorAggregate; all 5 element ids of the earlier version are present in this one
+      note: channel class BinaryOperatorAggregate; all 5 element ids of the earlier version are present in this one; 1 introduced here
   WRITTEN BY
     supervisor@6 (turn 1)      task_id=bd54dc0f-991a-4919-e7c1-d91f4fca2044
       evidence: checkpoint.pending_writes  checkpoint=1f1ab311-b7dc-6a2d-8005-a9d0577e152b  step=5  channel=messages  value_sha1=d8d45ee030fd
@@ -181,9 +223,9 @@ STATE branch:to:supervisor:00000000000000000000000000000010.0.000173711874962290
 
 STATE messages:00000000000000000000000000000010.0.00017371187496229012
   born in checkpoint 1f1ab311-dc7a-6e35-8008-fc6b27144ed3  step 8
-  DERIVED_FROM v8.6528   verdict=verified kept=6
+  DERIVED_FROM v8.6528   verdict=verified kept=6 new=1
       evidence: element ids recorded per version  checkpoint=1f1ab311-dc7a-6e35-8008-fc6b27144ed3
-      note: channel class BinaryOperatorAggregate; all 6 element ids of the earlier version are present in this one
+      note: channel class BinaryOperatorAggregate; all 6 element ids of the earlier version are present in this one; 1 introduced here
   WRITTEN BY
     __input__@7 (turn 2)       task_id=4b1b4a94-cf51-6e79-1ae1-54a0ca3b3489
       evidence: checkpoint.pending_writes  checkpoint=1f1ab311-dc78-6a82-8007-ffb6988e3d45  step=7  channel=messages  value_sha1=28739e6a8aa2
@@ -204,9 +246,9 @@ STATE branch:to:booking:00000000000000000000000000000011.0.0337103508337645
 
 STATE messages:00000000000000000000000000000011.0.0337103508337645
   born in checkpoint 1f1ab311-f85b-60fd-8009-bd3ebc937eb1  step 9
-  DERIVED_FROM v10.0001   verdict=verified kept=7
+  DERIVED_FROM v10.0001   verdict=verified kept=7 new=1
       evidence: element ids recorded per version  checkpoint=1f1ab311-f85b-60fd-8009-bd3ebc937eb1
-      note: channel class BinaryOperatorAggregate; all 7 element ids of the earlier version are present in this one
+      note: channel class BinaryOperatorAggregate; all 7 element ids of the earlier version are present in this one; 1 introduced here
   WRITTEN BY
     supervisor@9 (turn 2)      task_id=53361bbb-60de-1ec0-3e54-2cb20c574969
       evidence: checkpoint.pending_writes  checkpoint=1f1ab311-dc7a-6e35-8008-fc6b27144ed3  step=8  channel=messages  value_sha1=fcf3d18c4687
@@ -227,9 +269,9 @@ STATE branch:to:supervisor:00000000000000000000000000000012.0.7176290678833201
 
 STATE messages:00000000000000000000000000000012.0.7176290678833201
   born in checkpoint 1f1ab312-7647-6726-800a-3afafde42129  step 10
-  DERIVED_FROM v11.0337   verdict=verified kept=8
+  DERIVED_FROM v11.0337   verdict=verified kept=8 new=1
       evidence: element ids recorded per version  checkpoint=1f1ab312-7647-6726-800a-3afafde42129
-      note: channel class BinaryOperatorAggregate; all 8 element ids of the earlier version are present in this one
+      note: channel class BinaryOperatorAggregate; all 8 element ids of the earlier version are present in this one; 1 introduced here
   WRITTEN BY
     booking@10 (turn 2)        task_id=5ce1baa6-855e-44bb-9133-be97eba7e992
       evidence: checkpoint.pending_writes  checkpoint=1f1ab311-f85b-60fd-8009-bd3ebc937eb1  step=9  channel=messages  value_sha1=3fa500b1b237
@@ -240,9 +282,9 @@ STATE messages:00000000000000000000000000000012.0.7176290678833201
 
 STATE messages:00000000000000000000000000000013.0.08243108506223051
   born in checkpoint 1f1ab312-89d9-6740-800b-a2a2e9c84df0  step 11
-  DERIVED_FROM v12.7176   verdict=verified kept=9
+  DERIVED_FROM v12.7176   verdict=verified kept=9 new=1
       evidence: element ids recorded per version  checkpoint=1f1ab312-89d9-6740-800b-a2a2e9c84df0
-      note: channel class BinaryOperatorAggregate; all 9 element ids of the earlier version are present in this one
+      note: channel class BinaryOperatorAggregate; all 9 element ids of the earlier version are present in this one; 1 introduced here
   WRITTEN BY
     supervisor@11 (turn 2)     task_id=aba3c0ce-49bc-14cb-60b6-a2c5a62d8d25
       evidence: checkpoint.pending_writes  checkpoint=1f1ab312-7647-6726-800a-3afafde42129  step=10  channel=messages  value_sha1=b3eb0a87730e

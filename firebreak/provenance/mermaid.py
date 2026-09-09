@@ -16,9 +16,45 @@ from __future__ import annotations
 import re
 from typing import Optional
 
+from firebreak.provenance.content import (
+    clean_preview,
+    format_args,
+    preview_by_digest,
+    short,
+    task_outputs,
+)
 from firebreak.provenance.graph import ProvenanceGraph
 
 VERDICT_STYLE = {"verified": "-. verified .->", "refuted": "-. REFUTED .->", "unverified": "-. unverified .->"}
+
+
+def write_mermaid_blocks(markdown_path, text: str) -> list:
+    """Split the ```mermaid blocks of a rendered page into numbered `.NN.mmd` files.
+
+    The Markdown is the artifact a person reads; these are the same diagrams for anything that
+    wants one diagram at a time. Kept here rather than in a shell step so a checkout can reproduce
+    every output with the dump scripts alone.
+    """
+    from pathlib import Path
+
+    base = Path(str(markdown_path))
+    stem = base.with_suffix("")  # drops `.md`
+    written: list = []
+    block: list = []
+    inside = False
+    for line in text.splitlines():
+        if not inside and line.strip() == "```mermaid":
+            inside, block = True, []
+            continue
+        if inside and line.strip() == "```":
+            target = Path(f"{stem}.{len(written) + 1:02d}.mmd")
+            target.write_text("\n".join(block) + "\n")
+            written.append(target)
+            inside = False
+            continue
+        if inside:
+            block.append(line)
+    return written
 
 
 def _short_version(version: str) -> str:
@@ -110,7 +146,9 @@ def state_lineage(prov: ProvenanceGraph) -> str:
         if state is None or state.channel in _routing_channels(prov):
             continue
         arrow = VERDICT_STYLE.get(derived.verdict, "-.->")
-        label = derived.verdict if derived.kept is None else f"{derived.verdict} · kept {derived.kept}"
+        label = derived.verdict
+        if derived.kept is not None:
+            label = f"{label} · kept {derived.kept} · +{len(derived.new)}"
         edges.append(f"  {_state_id(derived.from_state_key, prov)} {arrow.replace(derived.verdict, label)} "
                      f"{_state_id(derived.state_key, prov)}")
         used.update({derived.from_state_key, derived.state_key})
@@ -151,7 +189,123 @@ def control_flow(prov: ProvenanceGraph) -> str:
     return "\n".join(lines)
 
 
-def render_markdown(prov: ProvenanceGraph, trace=None, source_name: str = "") -> str:
+def _introduced_table(prov: ProvenanceGraph, trace) -> list:
+    """What each step added to a folding channel, next to the lineage picture.
+
+    The ids live on the relation because they are a comparison between two versions. The text is
+    fetched from the trace at render time; it is the preview of the write that produced the newer
+    version, so it is what that step contributed rather than the whole accumulated state.
+    """
+    if trace is None or not prov.derived:
+        return []
+    previews = preview_by_digest(trace)
+    outputs = task_outputs(trace)
+    by_state: dict = {}
+    for write in prov.writes:
+        if write.evidence.value_sha1:
+            by_state.setdefault(write.state_key, []).append(write)
+
+    rows: list = []
+    for derived in prov.derived:
+        state = prov.states.get(derived.state_key)
+        if state is None or state.channel in _routing_channels(prov):
+            continue
+        writers = by_state.get(derived.state_key) or []
+        producers = ", ".join(sorted({f"`{prov.task_label(w.task_id)}`" for w in writers})) or "-"
+        # The node's own recorded output first: it is the text itself. The checkpoint preview is a
+        # repr of the written value, so it is only used where no node produced this version.
+        text = next(((outputs.get(w.task_id) or {}).get("text") for w in writers
+                     if (outputs.get(w.task_id) or {}).get("text")), None)
+        if not text:
+            text = clean_preview(next((previews.get(w.evidence.value_sha1) for w in writers
+                                       if previews.get(w.evidence.value_sha1)), None))
+        count = "-" if derived.verdict == "unverified" else str(len(derived.new))
+        rows.append(f"| `{_state_label(prov, derived.state_key)}` | {producers} | {count} | "
+                    f"{short(text, 150) or '-'} |")
+    if not rows:
+        return []
+    return [
+        "### What each step introduced",
+        "",
+        "| version | produced by | new elements | preview of the write |",
+        "|---|---|---|---|",
+        *rows,
+        "",
+        "`new elements` is the count of element ids present in this version and not in the previous "
+        "one. It describes the step, not the input of whatever read this version next: a task is "
+        "handed the whole version. Previews are truncated; the full text is in the trace.",
+        "",
+    ]
+
+
+def _tool_call_table(prov: ProvenanceGraph, mutating_tools=()) -> list:
+    """Every tool a task ran, in order. The only place the run touched anything outside the graph.
+
+    `mutating_tools` is declared by the caller, never inferred from the name: whether a tool changes
+    state outside the process is a property of the domain, and guessing it from a prefix would put
+    an assumption where this file otherwise only reports records.
+    """
+    declared = {str(name) for name in mutating_tools or ()}
+    rows: list = []
+    mutations = 0
+    for run in sorted(prov.tasks.values(), key=lambda r: (r.step is None, r.step or 0)):
+        for call in run.tool_calls:
+            result = call.get("result_preview")
+            cell = short(result, 70) if result else call.get("outcome", "-")
+            if call.get("outcome") == "error":
+                cell = f"**error** · {cell}"
+            mutates = call.get("name") in declared
+            mutations += 1 if mutates else 0
+            rows.append(f"| `{run.label}` | {call.get('order', 0) + 1} | `{call.get('name')}` | "
+                        f"{format_args(call.get('args'), 80)} | "
+                        f"{'**external state mutation**' if mutates else '-'} | {cell} |")
+    if not rows:
+        return []
+    lines = [
+        "## Tool calls",
+        "",
+        "A worker's tool loop runs inside one task, between that task's read and its write, so these "
+        "calls appear in no checkpoint and are not nodes of the state graph. They are recorded facts "
+        "all the same, and they are where a run reads or changes something outside LangGraph. Each is "
+        "attached to its task through the checkpoint namespace LangGraph built for that task.",
+        "",
+        "| task run | # | tool | arguments | effect | result |",
+        "|---|---|---|---|---|---|",
+        *rows,
+        "",
+    ]
+    if declared:
+        lines.append(f"`external state mutation` marks the {mutations} call(s) whose tool was declared "
+                     "as one that changes state outside the process. It records what the call did, "
+                     "not that it caused the episode's outcome; an unmarked call is simply not on "
+                     "that list.")
+        lines.append("")
+    return lines
+
+
+def _evaluation_lines(meta: dict, evaluation) -> list:
+    """The benchmark's verdict, verbatim. Nothing on this page is marked as its cause."""
+    if not evaluation:
+        return []
+    rows = [
+        ("Outcome", "PASSED" if evaluation.get("success") else "FAILED"),
+        ("Reward", evaluation.get("reward")),
+        ("DB score", evaluation.get("db_score")),
+        ("Communicate score", evaluation.get("communicate_score")),
+        ("Reasons", ", ".join(evaluation.get("success_reasons") or []) or "-"),
+    ]
+    del meta
+    lines = ["| | |", "|---|---|"]
+    lines.extend(f"| {name} | `{value}` |" for name, value in rows if value is not None)
+    lines.append("")
+    lines.append("Scored by the benchmark's evaluator. No task run or state version below is marked as "
+                 "the cause of this outcome.")
+    lines.append("")
+    return lines
+
+
+def render_markdown(prov: ProvenanceGraph, trace=None, source_name: str = "",
+                    evaluation: Optional[dict] = None, mutating_tools=()) -> str:
     """The three diagrams as one Markdown page GitHub renders without any tooling."""
     meta = getattr(trace, "meta", {}) or {}
     verdicts = {v: sum(1 for d in prov.derived if d.verdict == v) for v in ("verified", "refuted", "unverified")}
@@ -163,6 +317,7 @@ def render_markdown(prov: ProvenanceGraph, trace=None, source_name: str = "") ->
         out.append(f"τ² task {meta.get('task_id')} · model {meta.get('model')} · outcome "
                    f"{meta.get('outcome')} · faults {', '.join(meta.get('faults') or []) or 'none'}")
         out.append("")
+    out.extend(_evaluation_lines(meta, evaluation))
     out.append(f"{len(prov.tasks)} task runs · {len(prov.states)} state versions · "
                f"{len(prov.writes)} WRITE · {sum(1 for r in prov.reads if r.kind == 'state')} READ · "
                f"{sum(1 for r in prov.reads if r.kind == 'trigger')} TRIGGER · "
@@ -203,6 +358,7 @@ def render_markdown(prov: ProvenanceGraph, trace=None, source_name: str = "") ->
     out.append(state_lineage(prov))
     out.append("```")
     out.append("")
+    out.extend(_introduced_table(prov, trace))
 
     out.append("## Control flow")
     out.append("")
@@ -215,6 +371,7 @@ def render_markdown(prov: ProvenanceGraph, trace=None, source_name: str = "") ->
     out.append(control_flow(prov))
     out.append("```")
     out.append("")
+    out.extend(_tool_call_table(prov, mutating_tools))
     out.append("---")
     out.append("")
     out.append("Every relation and the field it came from are in the `.provenance.txt` beside this file; "
