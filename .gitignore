@@ -12,3 +12,12 @@ traces/
 eval/results/
 slurm/logs/
 .env
+
+# Derived views of an eval case. Reproduce them with scripts/dump_*.py; only the capture and
+# the two Markdown views are tracked, so a directory of cases stays readable.
+eval/cases/*/*.mmd
+eval/cases/*/trace.capture.txt
+eval/cases/*/trace.episode.json
+eval/cases/*/trace.provenance.json
+eval/cases/*/trace.provenance.txt
+docs/traces/*.mmd

@@ -64,24 +64,45 @@ The full raw results (every trace and summary) stay on the cluster under
 
 ## Cases
 
-Two episodes are kept in full, as `trace.jsonl` (the Firebreak capture) and
-`summary.json` (τ² scores, the whole transcript, and every tool call with its arguments).
-
 | case | outcome | notes |
 |---|---|---|
 | [`cases/task_0_pass/`](cases/task_0_pass/) | PASS | episode completed normally, no injection |
 | [`cases/task_1_fail/`](cases/task_1_fail/) | FAIL | episode completed normally, no injection |
 
-Both tasks are cancellation scenarios of the same shape: the customer asks to cancel a
-reservation, pushes back if refused, and does not want to proceed without a refund.
-Task 0 expects no database action at all; task 1 expects two read actions and no write.
-They are kept together as a pair because the task shape is held roughly constant while
-the outcome differs.
+Each case directory holds four files, and no more:
 
-Read a case with the CLI:
+| file | what it is |
+|---|---|
+| `trace.jsonl` | the capture: every runtime fact recorded during the run |
+| `trace.episode.md` | **start here** — the episode, its turns, and what each task run read, ran and wrote |
+| `trace.provenance.md` | the relation-level evidence: data flow, state lineage, control flow, tool calls |
+| `summary.json` | the run's own record: τ² scores and the whole transcript |
+
+`summary.json` is an input, not a view: it is what the benchmark reported, which is why the
+pages can show an Evaluation table. Everything else is derived from `trace.jsonl` and is not
+tracked, so a directory of cases stays readable however many cases it grows to. Regenerate
+any of it on demand:
 
 ```bash
-firebreak episode    eval/cases/task_1_fail/trace.jsonl --quiet
-firebreak provenance eval/cases/task_1_fail/trace.jsonl --quiet
-firebreak trace      eval/cases/task_1_fail/trace.jsonl
+C=eval/cases/task_1_fail
+MUTATING=cancel_reservation,book_reservation,update_reservation_flights,update_reservation_baggages,update_reservation_passengers,send_certificate
+
+python scripts/dump_episode.py    $C/trace.jsonl --json --eval $C/summary.json --mutating-tools $MUTATING
+python scripts/dump_provenance.py $C/trace.jsonl        --eval $C/summary.json --mutating-tools $MUTATING
+python scripts/dump_trace.py      $C/trace.jsonl --out
 ```
+
+That adds `.episode.json` / `.provenance.json` (the machine-readable graphs), `.provenance.txt`
+(every relation with the field it came from), `.capture.txt` (the capture read back source by
+source) and one `.mmd` per diagram. `sbatch slurm/dump_cases.sbatch` does the same for every
+case at once.
+
+`--mutating-tools` names the tools that change state outside the process. The marking is
+declared, never inferred from a tool's name, and it records what a call did — not that it
+caused the episode's outcome.
+
+Both tasks are cancellation scenarios of the same shape: the customer asks to cancel a
+reservation, pushes back if refused, and does not want to proceed without a refund. Task 0
+expects no database action at all; task 1 expects two read actions and no write. They are
+kept together as a pair because the task shape is held roughly constant while the outcome
+differs.
