@@ -22,3 +22,5 @@ firebreak provenance docs/traces/tau2_task39_qwen14b_clean.jsonl --quiet  # rela
 
 Earlier artifacts (the legacy execution-graph dumps, the legacy audit, the fault-injection run)
 are in the git history and are not part of the current path.
+
+For research evaluation cases (natural PASS/FAIL episodes), see [`eval/cases/`](../../eval/cases/).
